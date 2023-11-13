@@ -13,9 +13,11 @@ string HBM::standard_name               = "HBM";
 string HBM::level_str[int(Level::MAX)]  = {"Ch", "Ra", "Bg", "Ba", "Ro", "Co"};
 
 map<string, enum HBM::Org> HBM::org_map = {
-#if (ADD_HBM_32MB == ENABLE)
-    {"HBM_32Mb", HBM::Org::HBM_32Mb},
-#elif (ADD_HBM_128MB == ENABLE)
+    // taiga code
+// #if (ADD_HBM_32MB == ENABLE)
+//     {"HBM_32Mb", HBM::Org::HBM_32Mb},
+    // taiga code
+#if (ADD_HBM_128MB == ENABLE)
     {"HBM_128Mb", HBM::Org::HBM_128Mb},
 #endif  // ADD_HBM_128MB
     {  "HBM_1Gb",   HBM::Org::HBM_1Gb},

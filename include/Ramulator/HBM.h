@@ -166,10 +166,10 @@ public:
     enum class Org : int
     { // per channel density here. Each stack comes with 8 channels
     // taiga code
-#if (ADD_HBM_32MB == ENABLE)
-        HBM_32Mb,
+// #if (ADD_HBM_32MB == ENABLE)
+//         HBM_32Mb,
     // taiga code 
-#elif (ADD_HBM_128MB == ENABLE)
+#if (ADD_HBM_128MB == ENABLE)
         HBM_128Mb,
 #endif // ADD_HBM_128MB
         HBM_1Gb,
