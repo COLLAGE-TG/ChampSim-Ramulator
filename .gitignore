@@ -1,0 +1,172 @@
+# This file is used to list the file patterns for ignoring the tracking in git
+# ignore all files in below directories
+/bin/
+tracer/pin/obj-intel64/
+vcpkg_installed/
+dpc3_traces/
+core
+
+# ignore the specified type of files (.stats/.statistics/.trace/Dockerfile/.sh)
+/*.stats
+/*.statistics
+/*.trace
+/Dockerfile
+/*.sh
+
+**/*.o
+
+# Common git commands are listed below, the main branch is the branch pointed by the HEAD pointer.
+
+# (1) Setting git setup (e.g., user.name, user.email, core.editor):
+# git config --global user.name "your name"
+# git config --global user.email "your email address"
+# git config --global core.editor "code --wait"
+
+# (2) Initializing a repository in an existing directory (a subdirectory .git will be created):
+# git init
+
+# Cloning a repository from the remote:
+# git clone [path]
+
+# Cloning a repository from the remote using a specified name:
+# git clone -o [name] [path]
+
+# (3) Beginning to track new files, stage files, mark merge-conflict files as resolved (i.e., add precisely this content to the next commit):
+# git add [name]
+
+# Adding all contents to the next commit:
+# git add --all
+
+# (4) Checking the status of your files:
+# git status
+
+# (5) Committing your changes:
+# git commit
+
+# Staging every tracked files and committing with the commit message 'abc def':
+# git commit -a -m 'abc def'
+
+# Undoing the commit (or make the latest commit includes new changes):
+# git commit --amend
+
+# (6) Removing files from tracking (and your working directory):
+# git rm [name]
+
+# (7) Moving files (or renaming files):
+# git mv [name_old] [name_new]
+
+# (8) Viewing the commit history:
+# git log
+
+# Viewing the commit history from all of the branches:
+# git log --all
+
+# Viewing the changes each commit introduces:
+# git log -p
+
+# (9) Viewing the setting:
+# git config --list
+
+# Viewing the setting and where they are coming from:
+# git config --list --show-origin
+
+# (10) Unstaging a staged file (undo):
+# git restore --staged [name]
+
+# Unmodifying a modified file (undo):
+# git restore [name]
+
+# (11) Showing your remotes (parameter -v shows the URLs):
+# git remote [-v]
+
+# Inspecting a remote (i.e., showing a remote with more information):
+# git remote show [name]
+
+# (12) Adding remote repositories:
+# git remote add [name] [path]
+
+# (13) Fetching from a remote (i.e., just downloading and updating the data, no merging or modifying):
+# git fetch [name]
+
+# Fetching from all remotes:
+# git fetch --all
+
+# (14) Tracking the remote's branch (i.e., fetching and then merging data into your current branch):
+# git pull
+
+# (15) Pushing a local branch to your remote's main branch (i.e., uploading your data):
+# git push [remote] [your_branch]
+
+# Adding a local branch to your remote:
+# git push --set-upstream [remote] [your_branch]
+
+# Pushing a local branch to your remote's branches:
+# git push [remote] [your_branch]:[remote_branch]
+
+# Deleting a branch in your remote:
+# git push [remote] --delete [your_branch]
+
+# (16) Renaming and removing remotes:
+# git remote rename [name_old] [name_new]
+# git remote remove [name]
+
+# (17) Listing your tages:
+# git tag
+
+# Creating a lightweight tag:
+# git tag v1.0.0
+
+# (18) Creating a new branch:
+# git branch [name]
+
+# (19) Switching branches:
+# git checkout [name]
+# git switch [name]
+
+# Creating and switching to a new branch, based on the main branch:
+# git checkout -b [name]
+# git switch -c [name]
+
+# Creating and switching to a new branch, based on the remote's branches:
+# git checkout -b [name] [remote]/[remote_branch]
+# git switch -c [name] [remote]/[remote_branch]
+
+# (20) Deleting a branch:
+# git branch -d [name]
+
+# (21) Merging a branch into the merge into branch (e.g., main):
+# git switch [merge_into_name]
+# git merge [merge_in_name]
+
+# Note you need to commit again after fixing merge conflicts if happened.
+
+# (22) Listing your current branches (parameter -v shows the last commit):
+# git branch [-v]
+
+# parameter -vv shows the last commit and the tracking branches:
+# git branch -vv
+
+# Filtering the branch list with merged branches:
+# git branch --merged
+
+# Filtering the branch list with unmerged branches:
+# git branch --no-merged
+
+# Listing the branch list including the locals and remotes:
+# git branch --all
+
+# Note using the git fetch command to update the newest data from the remotes.
+
+# (23) Seeing the changes but not yet staged:
+# git diff
+
+# Seeing the staged changes to your last commit:
+# git diff --staged
+
+# Seeing a full difference between your current branch with another branch:
+# git diff [name]
+
+# (24) Undoing your last commit, the git add and git commit commands, and all the work in your working directory:
+# git reset --hard [commit_number]
+
+
