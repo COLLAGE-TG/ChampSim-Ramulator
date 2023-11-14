@@ -15,7 +15,7 @@ string HBM::level_str[int(Level::MAX)]  = {"Ch", "Ra", "Bg", "Ba", "Ro", "Co"};
 map<string, enum HBM::Org> HBM::org_map = {
     // taiga code
 #if (ADD_HBM_32MB == ENABLE)
-    {"HBM_32Mb", HBM::Org::HBM_32Mb},
+    { "HBM_32Mb", HBM::Org::HBM_32Mb},
     // taiga code
 #elif (ADD_HBM_128MB == ENABLE)
     {"HBM_128Mb", HBM::Org::HBM_128Mb},
