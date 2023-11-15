@@ -4,7 +4,16 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/vcpkg_installed/x64-linux/include/",
-                "${workspaceFolder}/include/"
+                "${workspaceFolder}/include/",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/source/include/pin",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/source/include/pin/gen",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/components/include",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/crt/include",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/cxx/include",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/components/include",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/xed-intel64/include",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/crt/include/kernel/uapi",
+                "/home/funkytaiga/pin-3.27-98718-gbeaa5d51e-gcc-linux/extras/xed-intel64/include/xed"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
