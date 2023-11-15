@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
 
   // === for print routine name ===
   // Initialize symbol table code, needed for rtn instrumentation
-  // PIN_InitSymbols();
+  PIN_InitSymbols();
   // === for print routine name ===
 
   // Initialize PIN library. Print help message if -h(elp) is specified
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
   // INS_AddInstrumentFunction(Init_instruction, 0);
 
   // プリントファンクション
-  // IMG_AddInstrumentFunction(Image, 0);
+  IMG_AddInstrumentFunction(Image, 0);
 
   // Register function to be called to instrument instructions
   INS_AddInstrumentFunction(Instruction, 0);
