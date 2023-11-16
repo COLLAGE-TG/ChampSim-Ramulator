@@ -8,7 +8,7 @@ int main(void)
   GC_INIT();
   GC_enable_incremental(); //小さいGCを多く行う。世代別とはちがう？
   GC_start_performance_measurement();
-  printf("start\n");
+  printf("start（test1.c）\n");
   long long Np = 100;
   long long Nc = 1000000;
   long long M = 100; //繰り返し
@@ -49,14 +49,14 @@ int main(void)
     // printf("\n\n");
     // printf("------------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
 
-    printf("%d回目\n", i);
+    printf("%d回目（test1.c）\n", i);
 
     // メモリ解放
     // free(ph);
     // free(ch);
   }
 
-  printf("NUM OF GC : %lu\n", GC_get_gc_no());
-  printf("TIME OF GC : %lu ms\n", GC_get_full_gc_total_time());
+  printf("NUM OF GC : %lu（test1.c）\n", GC_get_gc_no());
+  printf("TIME OF GC : %lu ms（test1.c）\n", GC_get_full_gc_total_time());
   return 0;
 }

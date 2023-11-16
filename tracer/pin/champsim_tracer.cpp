@@ -133,7 +133,7 @@ VOID Print_rtn_start(CHAR* name)
 VOID Print_rtn_end(CHAR* name)
 {
   std::cout << "====================" << " end " << name << "====================" << std::endl;
-  curr_instr.is_rtn_end = 1;
+  curr_instr.is_rtn_end = '1';
   std::cout << "==================now_curr_instr " << curr_instr.is_rtn_end << std::endl;
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
