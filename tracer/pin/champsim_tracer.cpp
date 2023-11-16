@@ -121,7 +121,7 @@ void WriteToSet(T* begin, T* end, UINT32 r)
 VOID Print_rtn_start(CHAR* name)
 {
   std::cout << "====================" << "rtn_name =  " << name << "====================" << std::endl;
-  curr_instr.is_rtn_start = 1;
+  curr_instr.is_rtn_start = '1';
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
 
