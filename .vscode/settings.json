@@ -78,5 +78,6 @@
     "editor.tabSize": 4,
     "editor.indentSize": "tabSize",
     "editor.formatOnSave": true, // To format when you save your file
-    "C_Cpp.clang_format_path": "/usr/bin/clang-format", // The full path of the clang-format executable. For Linux: "/usr/bin/clang-format".
+    "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+    "cmake.sourceDirectory": "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/vcpkg/buildtrees/bzip2/src/bzip2-1-336d4794a3.clean", // The full path of the clang-format executable. For Linux: "/usr/bin/clang-format".
 }
