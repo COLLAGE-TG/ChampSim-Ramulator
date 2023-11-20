@@ -126,12 +126,12 @@
             // Below are parmeters input into the executable file
             "args": [
                 "--warmup-instructions",
-                "100000", // 1000000
+                "10000", // 1000000
                 "--simulation-instructions",
-                "200000",
+                "100000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
-                "../../ChampSim-Ramulator/dp3_traces/400.perlbench-41B.champsimtrace.xz"
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/ls_trace_rtn_startend_100000_200000.champsim.xz"
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",

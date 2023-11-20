@@ -49,8 +49,8 @@ struct input_instr
 
     // taiga added
     // 関数の開始と終了、およびその名前を格納
-    unsigned char is_rtn_start;
-    unsigned char is_rtn_end;
+    unsigned char is_rtn_start = '0';
+    unsigned char is_rtn_end = '0';
     char function_name[256]; //256字以上の関数名は格納できません
 };
 

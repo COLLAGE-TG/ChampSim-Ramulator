@@ -120,24 +120,24 @@ void WriteToSet(T* begin, T* end, UINT32 r)
 
 VOID Print_rtn_start(CHAR* name)
 {
-  std::cout << "====================" << "rtn_name =  " << name << "====================" << std::endl;
+  // std::cout << "====================" << "rtn_name =  " << name << "====================" << std::endl;
   curr_instr.is_rtn_start = '1';
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
 
-  std::cout << "-------" << "Print_rtn_start" << "-------" << std::endl;
-  std::cout << "-------" << "curr_instr.ip = " << curr_instr.ip << "-------" << std::endl;
-  std::cout << "-------" << "curr_instr.is_rtn_start = " << curr_instr.is_rtn_start << "-------" << std::endl;
+  // std::cout << "-------" << "Print_rtn_start" << "-------" << std::endl;
+  // std::cout << "-------" << "curr_instr.ip = " << curr_instr.ip << "-------" << std::endl;
+  // std::cout << "-------" << "curr_instr.is_rtn_start = " << curr_instr.is_rtn_start << "-------" << std::endl;
 }
 
 VOID Print_rtn_end(CHAR* name)
 {
-  std::cout << "====================" << " end " << name << "====================" << std::endl;
+  // std::cout << "====================" << " end " << name << "====================" << std::endl;
   curr_instr.is_rtn_end = '1';
-  std::cout << "==================now_curr_instr " << curr_instr.is_rtn_end << std::endl;
+  // std::cout << "==================curr_instr.is_rtn_end " << curr_instr.is_rtn_end << std::endl;
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
-  std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
+  // std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
 }
 
 VOID Image(IMG img, VOID* v)
