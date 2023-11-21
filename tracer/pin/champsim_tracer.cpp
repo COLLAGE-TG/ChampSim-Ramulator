@@ -96,7 +96,6 @@ void WriteCurrentInstruction()
 
   typename decltype(outfile)::char_type buf[sizeof(trace_instr_format_t)];
   std::memcpy(buf, &curr_instr, sizeof(trace_instr_format_t));
-  // std::cout << "====================" << "instrCount" << instrCount << " " << "curr_instr.function_name =  " << curr_instr.function_name << " curr_instr.source_memory " << curr_instr.source_memory << " curr_instr.destination_registers " << curr_instr.destination_registers << "curr_instr.destination_memory " << curr_instr.destination_memory << "====================" << std::endl;
   outfile.write(buf, sizeof(trace_instr_format_t)); //curr_instrのデータをbufに渡す。curr_instrには.ip, .is_branchなどの値がある。
 }
 
@@ -124,10 +123,6 @@ VOID Print_rtn_start(CHAR* name)
   curr_instr.is_rtn_start = '1';
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
-
-  // std::cout << "-------" << "Print_rtn_start" << "-------" << std::endl;
-  // std::cout << "-------" << "curr_instr.ip = " << curr_instr.ip << "-------" << std::endl;
-  // std::cout << "-------" << "curr_instr.is_rtn_start = " << curr_instr.is_rtn_start << "-------" << std::endl;
 }
 
 VOID Print_rtn_end(CHAR* name)
@@ -149,7 +144,7 @@ VOID Image(IMG img, VOID* v)
     RTN_Open(GC_start_rtn);
     RTN_InsertCall(GC_start_rtn, IPOINT_BEFORE, (AFUNPTR)Print_rtn_start, IARG_ADDRINT, GC_START,
                    IARG_END);
-    RTN_InsertCall(GC_start_rtn, IPOINT_AFTER, (AFUNPTR)Print_rtn_end, IARG_ADDRINT, GC_START, IARG_END);
+    // RTN_InsertCall(GC_start_rtn, IPOINT_AFTER, (AFUNPTR)Print_rtn_end, IARG_ADDRINT, GC_START, IARG_END);
     RTN_Close(GC_start_rtn);
   }
 }
