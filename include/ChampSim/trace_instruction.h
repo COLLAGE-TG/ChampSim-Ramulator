@@ -47,12 +47,6 @@ struct input_instr
     unsigned long long destination_memory[NUM_INSTR_DESTINATIONS]; // output memory
     unsigned long long source_memory[NUM_INSTR_SOURCES];           // input memory
 
-    // taiga added
-    // 関数の開始と終了、およびその名前を格納
-    // bool is_rtn_start;
-    unsigned char is_rtn_start;
-    unsigned char is_rtn_end;
-    char function_name[256]; //256字以上の関数名は格納できません
 };
 
 struct cloudsuite_instr
@@ -71,12 +65,6 @@ struct cloudsuite_instr
     unsigned long long source_memory[NUM_INSTR_SOURCES];                 // input memory
 
     unsigned char asid[2];
-
-    // taiga added
-    // 関数の開始と終了、およびその名前を格納
-    unsigned char is_rtn_start;
-    unsigned char is_rtn_end;
-    char function_name[256]; //256字以上の関数名は格納できません
 };
 
 #endif

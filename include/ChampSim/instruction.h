@@ -73,25 +73,15 @@ struct ooo_model_instr
     // these are indices of instructions in the ROB that depend on me
     std::vector<std::reference_wrapper<ooo_model_instr>> registers_instrs_depend_on_me;
 
-    // taiga added
-    // 関数の開始と終了、およびその名前を格納
-    // bool is_rtn_start;
-    // unsigned char is_rtn_start;
-    // unsigned char is_rtn_end;
-    // char function_name[256]; //256字以上の関数名は格納できません
-    // taiga added
 
 private:
     template<typename T>
-    ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid): ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid), is_rtn_start(instr.is_rtn_start), is_rtn_end(instr.is_rtn_end)
+    ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid): ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid)
     {
         std::remove_copy(std::begin(instr.destination_registers), std::end(instr.destination_registers), std::back_inserter(this->destination_registers), 0);
         std::remove_copy(std::begin(instr.source_registers), std::end(instr.source_registers), std::back_inserter(this->source_registers), 0);
         std::remove_copy(std::begin(instr.destination_memory), std::end(instr.destination_memory), std::back_inserter(this->destination_memory), 0);
         std::remove_copy(std::begin(instr.source_memory), std::end(instr.source_memory), std::back_inserter(this->source_memory), 0);
-
-        // taiga added
-        strcpy(function_name, instr.function_name);
 
         bool writes_sp   = std::count(std::begin(destination_registers), std::end(destination_registers), champsim::REG_STACK_POINTER);
         bool writes_ip   = std::count(std::begin(destination_registers), std::end(destination_registers), champsim::REG_INSTRUCTION_POINTER);
