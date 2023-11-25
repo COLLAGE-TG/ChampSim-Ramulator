@@ -13,8 +13,10 @@ string HBM::standard_name               = "HBM";
 string HBM::level_str[int(Level::MAX)]  = {"Ch", "Ra", "Bg", "Ba", "Ro", "Co"};
 
 map<string, enum HBM::Org> HBM::org_map = {
-#if (ADD_HBM_1MB == ENABLE)
-    {"HBM_1Mb", HBM::Org::HBM_1Mb}, 
+#if (ADD_HBM_8MB == ENABLE)
+    {"HBM_8MB", HBM::Org::HBM_8MB}, 
+#elif (ADD_HBM_64MB == ENABLE)
+    {"HBM_64MB", HBM::Org::HBM_64MB}, 
 #elif (ADD_HBM_128MB == ENABLE)
     {"HBM_128Mb", HBM::Org::HBM_128Mb},
 #endif  // ADD_HBM_128MB
@@ -97,7 +99,25 @@ void HBM::init_speed()
     default:
         assert(false);
     };
-#if (ADD_HBM_1MB == ENABLE)
+#if (ADD_HBM_8MB == ENABLE)
+    switch (org_entry.size >> 10)
+    {
+    case 0:
+        density = 0;
+        break;
+    case 1:
+        density = 1;
+        break;
+    case 2:
+        density = 2;
+        break;
+    case 4:
+        density = 3;
+        break;
+    default:
+        assert(false);
+    }
+#elif (ADD_HBM_64MB == ENABLE)
     switch (org_entry.size >> 10)
     {
     case 0:

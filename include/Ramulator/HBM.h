@@ -165,8 +165,10 @@ public:
     /* Organization */
     enum class Org : int
     { // per channel density here. Each stack comes with 8 channels
-#if (ADD_HBM_1MB == ENABLE)
-        HBM_1Mb,
+#if (ADD_HBM_8MB == ENABLE)
+        HBM_8MB,
+#elif (ADD_HBM_64MB == ENABLE)
+        HBM_64MB,
 #elif (ADD_HBM_128MB == ENABLE)
     HBM_128Mb,
 #endif // ADD_HBM_128MB
@@ -182,7 +184,9 @@ public:
         int dq;
         int count[int(Level::MAX)];
     } org_table[int(Org::MAX)] = {
-#if (ADD_HBM_1MB == ENABLE)
+#if (ADD_HBM_8MB == ENABLE)
+        { 1 << 3, 128, {0, 0, 2, 1, 1 << 8, 1 << (6 + 1)}},   
+#elif (ADD_HBM_64MB == ENABLE)
         { 1 << 6, 128, {0, 0, 2, 1, 1 << 11, 1 << (6 + 1)}},
 #elif (ADD_HBM_128MB == ENABLE)
         { 1 << 7, 128, {0, 0, 2, 1, 1 << 12, 1 << (6 + 1)}},

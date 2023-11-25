@@ -26,8 +26,8 @@
 #define MEMORY_NUMBER_ONE  (0u)
 #define MEMORY_NUMBER_TWO  (1u)
 #define ADD_HBM_128MB      (DISABLE) //need changing HBM-config.cfg
-#define ADD_HBM_64MB      (ENABLE)
-// #define ADD_HBM_32MB      (ENABLE)
+#define ADD_HBM_64MB      (DISABLE)
+#define ADD_HBM_8MB      (ENABLE)
 #else
 #define NUMBER_OF_MEMORIES (1u)
 #endif // MEMORY_USE_HYBRID
