@@ -172,6 +172,7 @@ private:
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
 
+
 template<typename T, typename T2>
 MEMORY_CONTROLLER<T, T2>::MEMORY_CONTROLLER(double freq_scale, double clock_scale, double clock_scale2, std::vector<channel_type*>&& ul, ramulator::Memory<T, ramulator::Controller>& memory, ramulator::Memory<T2, ramulator::Controller>& memory2)
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)

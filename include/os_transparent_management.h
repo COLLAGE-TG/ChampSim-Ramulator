@@ -14,6 +14,7 @@
 #include "cameo.h"
 #include "ideal_single_mempod.h"
 #include "variable_granularity.h"
+#include "history_based_page_selection.h"
 
 /** @note Abbreviation:
  *  FM -> Fast memory (e.g., HBM, DDR4)

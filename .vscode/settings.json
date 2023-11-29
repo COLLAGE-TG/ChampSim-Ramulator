@@ -100,7 +100,8 @@
         "forward_list": "cpp",
         "span": "cpp",
         "typeindex": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "__std_stream": "cpp"
     },
     "editor.tabSize": 4,
     "editor.indentSize": "tabSize",
