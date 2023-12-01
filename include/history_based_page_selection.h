@@ -80,8 +80,8 @@ public:
     struct RemappingRequest
     {
         uint64_t address_in_fm, address_in_sm; // Hardware address in fast and slow memories
-        REMAPPING_LOCATION_WIDTH fm_location, sm_location;
-        uint8_t size; // Number of cache lines to remap
+        // REMAPPING_LOCATION_WIDTH fm_location, sm_location;
+        // uint8_t size; // Number of cache lines to remap
     };
 
     std::deque<RemappingRequest> remapping_request_queue;
@@ -188,9 +188,9 @@ private:
 
     // Add new remapping request into the remapping_request_queue
     bool enqueue_remapping_request(RemappingRequest& remapping_request);
-};
 
-bool do_swap_history_based();
+    bool add_new_remapping_request_to_queue(float);
+};
 
 #endif // HISTORY_BASED_PAGE_SELECTION
 

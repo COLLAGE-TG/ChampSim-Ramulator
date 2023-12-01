@@ -2,6 +2,7 @@
 #include "os_transparent_management.h"
 
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
+
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint64_t fast_memory_max_address)
 : total_capacity(max_address), fast_memory_capacity(fast_memory_max_address),
@@ -72,15 +73,39 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
 
     epoch_count++;
     if(epoch_count >= EPOCH_LENGTH) {
-        do_swap_history_based();
+        add_new_remapping_request_to_queue(queue_busy_degree);
+        epoch_count = 0;
     }
 
     return true;
 }
 
-bool do_swap_history_based()
+bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 {
-    std::cout << "do_swap_history_based()" << std::endl;
+    for(uint64_t i = fast_memory_capacity_at_data_block_granularity; i < total_capacity_at_data_block_granularity; i++) {
+        // 低速メモリにあるホットページを発見
+        if(hotness_table.at(i) == true) {
+            uint64_t tmp_hotpage_data_block_address_in_sm = i;
+            uint64_t tmp_coldpage_data_block_address_in_fm;
+            // 高速メモリにあるコールドページを検索
+            for(uint64_t j = 0; j < fast_memory_capacity_at_data_block_granularity; j++) {
+                if(hotness_table.at(j) == false) {
+                    tmp_coldpage_data_block_address_in_fm = j;
+                    hotness_table.at(j) = true; //これからhotpageが入るのでhotに変更
+                    RemappingRequest remapping_request;
+                    remapping_request.address_in_fm = tmp_coldpage_data_block_address_in_fm << DATA_MANAGEMENT_OFFSET_BITS;
+                    remapping_request.address_in_sm = tmp_hotpage_data_block_address_in_sm << DATA_MANAGEMENT_OFFSET_BITS;
+                    hotness_table.at(i) = false; //coldpageが入るので変更
+                    if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
+                    {
+                        enqueue_remapping_request(remapping_request);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    std::cout << "add_new_remapping_request_to_queue()" << std::endl;
     return true;
 }
 
