@@ -152,7 +152,7 @@ public:
 public:
     // Input address should be hardware address and at byte granularity
     bool start_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size);
-
+    bool start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2);
     // Input address should be hardware address and at byte granularity
     bool update_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size);
 
@@ -381,7 +381,9 @@ long MEMORY_CONTROLLER<T, T2>::operate()
             start_swapping_segments(remapping_request.address_in_fm, remapping_request.address_in_sm, remapping_request.size);
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             start_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
-#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD
+#elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+            start_swapping_segments_for_page_size(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm);
+#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD, HISTORY_BASED_PAGE_SELECTION
         }
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
     }
@@ -1007,6 +1009,26 @@ bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments(uint64_t address_1, uint6
         base_address[0]     = address_1 >> LOG2_BLOCK_SIZE; // The single swapping is conducted at cache line granularity.
         base_address[1]     = address_2 >> LOG2_BLOCK_SIZE;
         active_entry_number = size;
+    }
+    else
+    {
+        return false; // This swapping unit is busy, it cannot issue new swapping request.
+    }
+    return true; // New swapping is issued.
+}
+
+// Input address should be hardware address and at byte granularity
+template<class T, class T2>
+bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2)
+{
+    assert(size <= SWAPPING_BUFFER_ENTRY_NUMBER);
+
+    if (states == SwappingState::Idle)
+    {
+        states              = SwappingState::Swapping;      // Start swapping.
+        base_address[0]     = address_1 >> LOG2_BLOCK_SIZE; // The single swapping is conducted at cache line granularity.
+        base_address[1]     = address_2 >> LOG2_BLOCK_SIZE;
+        active_entry_number = 1; //active_entry_numberはページの数を表す。
     }
     else
     {

@@ -25,9 +25,10 @@
 #define NUMBER_OF_MEMORIES (2U) // We use two memories for hybrid memory system.
 #define MEMORY_NUMBER_ONE  (0u)
 #define MEMORY_NUMBER_TWO  (1u)
-#define ADD_HBM_128MB      (ENABLE) //need changing HBM-config.cfg
+// need changing HBM-config.cfg to change HBM capacity
+#define ADD_HBM_128MB      (DISABLE) 
 #define ADD_HBM_64MB      (DISABLE)
-#define ADD_HBM_8MB      (DISABLE)
+#define ADD_HBM_8MB      (ENABLE)
 #define ADD_HBM_1MB      (DISABLE) //It has issues with CAMEO and similar tools; they are not functioning properly.
 #else
 #define NUMBER_OF_MEMORIES (1u)
@@ -118,6 +119,8 @@
 #define DATA_MANAGEMENT_OFFSET_BITS    (champsim::lg2(DATA_MANAGEMENT_GRANULARITY)) // Data management granularity means how the hardware cluster the data
 #define DATA_GRANULARITY_IN_CACHE_LINE (DATA_MANAGEMENT_GRANULARITY / DATA_GRANULARITY_64B)
 #endif // IDEAL_SINGLE_MEMPOD
+
+#define PAGE_SIZE (4096u)
 
 #if (USE_OPENMP == ENABLE)
 #define SET_THREADS_NUMBER (6)

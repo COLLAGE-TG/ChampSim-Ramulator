@@ -44,7 +44,7 @@
 #define LOCATION_TABLE_ENTRY_DEFAULT_VALUE    (0x0538)
 #define LOCATION_TABLE_ENTRY_MSB              (UINT16_WIDTH - 1) // MSB -> most significant bit
 
-#define REMAPPING_REQUEST_QUEUE_LENGTH        (64) // 1024/4096
+#define REMAPPING_REQUEST_QUEUE_LENGTH        (4096) // 1024/4096
 #define QUEUE_BUSY_DEGREE_THRESHOLD           (0.8f)
 
 #define INCOMPLETE_READ_REQUEST_QUEUE_LENGTH  (128)
@@ -87,18 +87,18 @@ public:
     std::deque<RemappingRequest> remapping_request_queue;
     uint64_t remapping_request_queue_congestion;
 
-    // Scoped enumerations
-    enum class RemappingLocation : REMAPPING_LOCATION_WIDTH
-    {
-        Zero = 0,
-        One,
-        Two,
-        Three,
-        Four,
-        Max = NUMBER_OF_BLOCK
-    };
+    // // Scoped enumerations
+    // enum class RemappingLocation : REMAPPING_LOCATION_WIDTH
+    // {
+    //     Zero = 0,
+    //     One,
+    //     Two,
+    //     Three,
+    //     Four,
+    //     Max = NUMBER_OF_BLOCK
+    // };
 
-    uint8_t congruence_group_msb; // Most significant bit of congruence group, and its address format is in the byte granularity
+    // uint8_t congruence_group_msb; // Most significant bit of congruence group, and its address format is in the byte granularity
 
     /* Remapping table */
 // #if (BITS_MANIPULATION == ENABLE)
@@ -124,35 +124,34 @@ public:
 // map<uint64_t physical_page_address, uint64_t hardware_page_address> remapping_table
 // map<uint64_t physical_page_address, uint64_t access_count> page_access_count_table
 // 元のアドレス->physical_page_address、リマッピング後のアドレス->hardware_page_address
-std::map<uint64_t, uint64_t> remapping_page_table;
-std::map<uint64_t, uint64_t> page_access_count_table;
+std::vector<uint64_t>& remapping_data_block_table; //index : physical page block address, value : hardware page block address
 
-#if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
-    /** @brief
-     *  If a memory read request is mapped in slow memory, the memory controller needs first access the fast memory
-     *  to get the Location Entry and Data (LEAD), and then access the slow memory based on that LEAD.
-     */
-    struct ReadRequest
-    {
-        request_type packet;
-        bool fm_access_finish = false; // Whether the access in fast memory is completed.
-    };
+// #if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
+//     /** @brief
+//      *  If a memory read request is mapped in slow memory, the memory controller needs first access the fast memory
+//      *  to get the Location Entry and Data (LEAD), and then access the slow memory based on that LEAD.
+//      */
+//     struct ReadRequest
+//     {
+//         request_type packet;
+//         bool fm_access_finish = false; // Whether the access in fast memory is completed.
+//     };
 
-    std::vector<ReadRequest> incomplete_read_request_queue;
+//     std::vector<ReadRequest> incomplete_read_request_queue;
 
-    /** @brief
-     *  If a memory write request is received, the memory controller needs first to figure out where is the right
-     *  place to write. So, the memory controller first access the fast memory to get the Location Entry and Data (LEAD),
-     *  and then write the memory (fast or slow memory).
-     */
-    struct WriteRequest
-    {
-        request_type packet;
-        bool fm_access_finish = false; // Whether the access in fast memory is completed.
-    };
+//     /** @brief
+//      *  If a memory write request is received, the memory controller needs first to figure out where is the right
+//      *  place to write. So, the memory controller first access the fast memory to get the Location Entry and Data (LEAD),
+//      *  and then write the memory (fast or slow memory).
+//      */
+//     struct WriteRequest
+//     {
+//         request_type packet;
+//         bool fm_access_finish = false; // Whether the access in fast memory is completed.
+//     };
 
-    std::vector<WriteRequest> incomplete_write_request_queue;
-#endif // COLOCATED_LINE_LOCATION_TABLE
+//     std::vector<WriteRequest> incomplete_write_request_queue;
+// #endif // COLOCATED_LINE_LOCATION_TABLE
 
     /* Member functions */
     OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint64_t fast_memory_max_address);
@@ -177,10 +176,10 @@ std::map<uint64_t, uint64_t> page_access_count_table;
     // Detect cold data block
     void cold_data_detection();
 
-#if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
-    bool finish_fm_access_in_incomplete_read_request_queue(uint64_t h_address);
-    bool finish_fm_access_in_incomplete_write_request_queue(uint64_t h_address);
-#endif // COLOCATED_LINE_LOCATION_TABLE
+// #if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
+//     bool finish_fm_access_in_incomplete_read_request_queue(uint64_t h_address);
+//     bool finish_fm_access_in_incomplete_write_request_queue(uint64_t h_address);
+// #endif // COLOCATED_LINE_LOCATION_TABLE
 
 private:
     // Evict cold data block

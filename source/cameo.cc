@@ -244,29 +244,6 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
         assert(false);
     }
 
-    // debug taiga
-    REMAPPING_LOCATION_WIDTH fm_remapping_location = line_location_table.at(line_location_table_index).location[REMAPPING_LOCATION_WIDTH(RemappingLocation::Three)];
-    uint64_t address_in_fm = champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(fm_remapping_location) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit);
-    std::string bits_1 = uint64_to_binary_string(line_location_table_index);
-    std::string bits_2 = uint8_to_binary_string(fm_remapping_location);
-    std::string bits_3 = uint8_to_binary_string(fast_memory_offset_bit);
-    std::string bits_4 = uint8_to_binary_string(congruence_group_msb);
-    std::string bits_5 = uint64_to_binary_string(address_in_fm);
-    std::cout << "---------------------------------start-------------------------------------" << std::endl;
-    std::cout << "line_location_table_index = " << line_location_table_index << std::endl;
-    std::cout << "fm_remapping_location = " << static_cast<unsigned>(fm_remapping_location) << std::endl;
-    std::cout << "fast_memory_offset_bit = " << static_cast<unsigned>(fast_memory_offset_bit) << std::endl;
-    std::cout << "congruence_group_msb = " << static_cast<unsigned>(congruence_group_msb) << std::endl;
-    std::cout << "address_in_fm = " << address_in_fm << std::endl;
-    std::cout << "---------------------------------bits-------------------------------------" << std::endl;
-    std::cout << "bits line_location_table_index = " << bits_1 << std::endl;
-    std::cout << "bits fm_remapping_location = " << bits_2 << std::endl;
-    std::cout << "bits fast_memory_offset_bit = " << bits_3 << std::endl;
-    std::cout << "bits congruence_group_msb = " << bits_4 << std::endl;
-    std::cout << "bits address_in_fm = " << bits_5 << std::endl;
-    std::cout << "---------------------------------end-------------------------------------" << std::endl;
-    // debug taiga
-
     // Add new remapping requests to queue
     if ((hotness_table.at(data_block_address) == true) && (remapping_location != REMAPPING_LOCATION_WIDTH(RemappingLocation::Zero)))
     {
@@ -361,20 +338,6 @@ void OS_TRANSPARENT_MANAGEMENT::physical_to_hardware_address(request_type& packe
 #endif // BITS_MANIPULATION
 
     packet.h_address = champsim::replace_bits(champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(remapping_location) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit), packet.address, DATA_MANAGEMENT_OFFSET_BITS - 1);
-
-
-    std::string bits_11 = uint64_to_binary_string(packet.address);
-    std::string bits_12 = uint64_to_binary_string(packet.h_address);
-    std::string bits_13 = uint8_to_binary_string(remapping_location);
-    std::cout << "---------------------------------func physical_to_hardware_address start-------------------------------------" << std::endl;
-    std::cout << "packet.address = " << packet.address << std::endl;
-    std::cout << "packet.h_address = " << packet.h_address << std::endl;
-    std::cout << "remapping_location = " << remapping_location << std::endl;
-    std::cout << "---------------------------------bits-------------------------------------" << std::endl;
-    std::cout << "packet.address = " << bits_11 << std::endl;
-    std::cout << "packet.h_address = " << bits_12 << std::endl;
-    std::cout << "remapping_location = " << bits_13 << std::endl;
-    std::cout << "---------------------------------end-------------------------------------" << std::endl;
 
 #if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
     packet.h_address_fm = champsim::replace_bits(champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(RemappingLocation::Zero) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit), packet.address, DATA_MANAGEMENT_OFFSET_BITS - 1);
