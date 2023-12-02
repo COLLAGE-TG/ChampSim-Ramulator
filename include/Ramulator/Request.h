@@ -45,8 +45,12 @@ public:
     // ChampSim's memory controller's packet
     DRAM_CHANNEL::request_type packet;
 #endif // RAMULATOR
-
+#if HISTORY_BASED_PAGE_SELECTION
+    std::array<uint64_t, PAGE_SIZE> data = {0}; // a page
+#else
     std::array<uint8_t, BLOCK_SIZE> data = {0}; // a cache line
+#endif //HISTORY_BASED_PAGE_SELECTION
+    
     uint8_t memory_id                    = NUMBER_OF_MEMORIES;
 
     /* Member functions */

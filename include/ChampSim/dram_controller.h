@@ -82,6 +82,18 @@ public:
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
     /* Swapping unit */
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    struct BUFFER_ENTRY
+    {
+        bool finish                                                   = false; // Whether a swapping of this entry is completed.
+
+        std::array<uint64_t, PAGE_SIZE> data[SWAPPING_SEGMENT_NUMBER] = {0}; // Pages
+        bool read_issue[SWAPPING_SEGMENT_NUMBER];                            // Whether a read request is issued
+        bool read[SWAPPING_SEGMENT_NUMBER];                                  // Whether a read request is finished
+        bool write[SWAPPING_SEGMENT_NUMBER];                                 // Whether a write request is finished
+        bool dirty[SWAPPING_SEGMENT_NUMBER];                                 // Whether a "new" write request is received
+    };
+#else // HISTORY_BASED_PAGE_SELECTION
     struct BUFFER_ENTRY
     {
         bool finish                                                   = false; // Whether a swapping of this entry is completed.
@@ -92,6 +104,7 @@ public:
         bool write[SWAPPING_SEGMENT_NUMBER];                                 // Whether a write request is finished
         bool dirty[SWAPPING_SEGMENT_NUMBER];                                 // Whether a "new" write request is received
     };
+#endif // HISTORY_BASED_PAGE_SELECTION
 
     std::array<BUFFER_ENTRY, SWAPPING_BUFFER_ENTRY_NUMBER> buffer = {};
     uint64_t base_address[SWAPPING_SEGMENT_NUMBER]; // Here base_address[0] for segment 1, base_address[1] for segment 2. Address is hardware address and at cache line granularity.
@@ -150,11 +163,16 @@ public:
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
 public:
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    // Input address should be hardware address and at byte granularity
+    bool start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2);
+#else
     // Input address should be hardware address and at byte granularity
     bool start_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size);
-    bool start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2);
     // Input address should be hardware address and at byte granularity
     bool update_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size);
+#endif // HISTORY_BASED_PAGE_SELECTION
+    
 
 private:
     /* Member functions for swapping */
@@ -382,7 +400,7 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             start_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-            start_swapping_segments_for_page_size(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm);
+            start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD, HISTORY_BASED_PAGE_SELECTION
         }
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
@@ -401,6 +419,7 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             update_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD
+// HISTORY_BASED_PAGE_SELECTIONではswapのupdateは起きない
         }
         else
         {
@@ -424,6 +443,7 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             is_updated = update_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD
+// HISTORY_BASED_PAGE_SELECTIONではswapのupdateは起きない
         }
         else
         {
@@ -971,9 +991,30 @@ template<class T, class T2>
 void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
 {
     swapping_count += active_entry_number * 2;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    swapping_traffic_in_bytes += active_entry_number * 2 * PAGE_SIZE;
+#else
     swapping_traffic_in_bytes += active_entry_number * 2 * BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
 
     states = SwappingState::Idle;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    for (auto i = 0; i < SWAPPING_BUFFER_ENTRY_NUMBER; i++)
+    {
+        buffer[i].finish = false;
+        for (auto j = 0; j < SWAPPING_SEGMENT_NUMBER; j++)
+        {
+            for (uint64_t z = 0; z < PAGE_SIZE; z++)
+            {
+                buffer[i].data[j][z] = 0;
+            }
+            buffer[i].read_issue[j] = false;
+            buffer[i].read[j]       = false;
+            buffer[i].write[j]      = false;
+            buffer[i].dirty[j]      = false;
+        }
+    }
+#else
     for (auto i = 0; i < SWAPPING_BUFFER_ENTRY_NUMBER; i++)
     {
         buffer[i].finish = false;
@@ -989,6 +1030,9 @@ void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
             buffer[i].dirty[j]      = false;
         }
     }
+#endif // HISTORY_BASED_PAGE_SELECTION
+
+    
 
     for (auto i = 0; i < SWAPPING_SEGMENT_NUMBER; i++)
     {
@@ -997,6 +1041,25 @@ void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
     active_entry_number = finish_number = 0;
 }
 
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+// Input address should be hardware address and at byte granularity
+template<class T, class T2>
+bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2)
+{
+    if (states == SwappingState::Idle)
+    {
+        states              = SwappingState::Swapping;      // Start swapping.
+        base_address[0]     = address_1 >> LOG2_PAGE_SIZE; // The single swapping is conducted at cache line granularity.
+        base_address[1]     = address_2 >> LOG2_PAGE_SIZE;
+        active_entry_number = 1; //active_entry_numberはページの数を表す。
+    }
+    else
+    {
+        return false; // This swapping unit is busy, it cannot issue new swapping request.
+    }
+    return true; // New swapping is issued.
+}
+#else
 // Input address should be hardware address and at byte granularity
 template<class T, class T2>
 bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size)
@@ -1009,26 +1072,6 @@ bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments(uint64_t address_1, uint6
         base_address[0]     = address_1 >> LOG2_BLOCK_SIZE; // The single swapping is conducted at cache line granularity.
         base_address[1]     = address_2 >> LOG2_BLOCK_SIZE;
         active_entry_number = size;
-    }
-    else
-    {
-        return false; // This swapping unit is busy, it cannot issue new swapping request.
-    }
-    return true; // New swapping is issued.
-}
-
-// Input address should be hardware address and at byte granularity
-template<class T, class T2>
-bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2)
-{
-    assert(size <= SWAPPING_BUFFER_ENTRY_NUMBER);
-
-    if (states == SwappingState::Idle)
-    {
-        states              = SwappingState::Swapping;      // Start swapping.
-        base_address[0]     = address_1 >> LOG2_BLOCK_SIZE; // The single swapping is conducted at cache line granularity.
-        base_address[1]     = address_2 >> LOG2_BLOCK_SIZE;
-        active_entry_number = 1; //active_entry_numberはページの数を表す。
     }
     else
     {
@@ -1066,6 +1109,7 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
 
     return false;
 }
+#endif // HISTORY_BASED_PAGE_SELECTION
 
 template<class T, class T2>
 uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()

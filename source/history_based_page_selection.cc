@@ -105,7 +105,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                     RemappingRequest remapping_request;
                     remapping_request.address_in_fm = tmp_coldpage_data_block_address_in_fm << DATA_MANAGEMENT_OFFSET_BITS;
                     remapping_request.address_in_sm = tmp_hotpage_data_block_address_in_sm << DATA_MANAGEMENT_OFFSET_BITS;
-                    remapping_request.size          = DATA_GRANULARITY_IN_CACHE_LINE;
+
                     hotness_table.at(i) = false; //coldpageが入るので変更
                     if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
                     {
