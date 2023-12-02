@@ -1135,7 +1135,12 @@ uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
                     if (buffer[i].read_issue[j] == false)
                     {
                         bool stall       = true;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+                        uint64_t address = (base_address[j] + i) << LOG2_PAGE_SIZE;
+#else
                         uint64_t address = (base_address[j] + i) << LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
+                        
 
                         // Assign the request to the right memory.
                         if (address < memory.max_address)
@@ -1184,8 +1189,11 @@ uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
                         if ((buffer[i].write[j] == false) || (buffer[i].dirty[j] == true))
                         {
                             bool stall       = true;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+                            uint64_t address = (base_address[j] + i) << LOG2_PAGE_SIZE;
+#else
                             uint64_t address = (base_address[j] + i) << LOG2_BLOCK_SIZE;
-
+#endif // HISTORY_BASED_PAGE_SELECTION
                             // Assign the request to the right memory.
                             if (address < memory.max_address)
                             {
@@ -1289,8 +1297,11 @@ void MEMORY_CONTROLLER<T, T2>::return_swapping_data(ramulator::Request& request)
     }
     break;
     }
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    uint64_t address = request.addr >> LOG2_PAGE_SIZE;
+#else
     uint64_t address = request.addr >> LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
     uint8_t segment_index;
     uint8_t entry_index;
     // Calculate entry index in the fashion of little-endian.
@@ -1335,8 +1346,11 @@ uint8_t MEMORY_CONTROLLER<T, T2>::check_request(request_type& packet, ramulator:
 #else
     address = packet.address;
 #endif
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    address >>= LOG2_PAGE_SIZE;
+#else
     address >>= LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
     uint8_t segment_index;
     uint8_t entry_index;
     // Calculate entry index in the fashion of little-endian.
