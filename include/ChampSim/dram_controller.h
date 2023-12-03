@@ -47,6 +47,8 @@
 #include "Ramulator/Memory.h"
 #include "Ramulator/Request.h"
 
+#include <thread>
+
 /* Macro */
 
 /* Type */
@@ -591,7 +593,59 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
 #endif // TRACKING_LOAD_STORE_STATISTICS
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
-#if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+// #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+// #if (HISTORY_BASED_PAGE_SELECTION == ENABLE) //この部分は不安が残る。サイクル数をインクリメントする必要があるかどうかも気になる。
+//     // swapが終わるまで待機
+//     // for debug
+//     // bool debug_flag=false;
+//     // // for debug
+//     // while(states == SwappingState::Swapping) {
+//     //     std::this_thread::sleep_for(std::chrono::milliseconds(10)); //0.01秒ごとに確認
+//     //     // std::cout << "stall!" << std::endl;
+//     //     // for debug
+//     //     if(!debug_flag) {debug_flag=true;}
+//     //     // for debug
+//     // }
+//     // // for debug
+//     // if(debug_flag) {
+//     // std::cout << "=========swap end============" << std::endl;
+//     // }
+//     // for debug
+// #elif
+//     /* Check swapping below */
+//     uint8_t under_swapping = check_request(packet, type);
+//     switch (under_swapping)
+//     {
+//     case 0: // This address is under swapping.
+//     {
+//         return false; // Queue is full, note Ramulator doesn't merge requests.
+//     }
+//     break;
+//     case 1: // This address is not under swapping.
+//         break;
+//     case 2: // Though this address is under swapping, we can service its request because the data is in the swapping buffer.
+//     {
+//         response_type response {packet.address, packet.v_address, packet.data, packet.pf_metadata, packet.instr_depend_on_me};
+
+//         for (auto ret : {&ul->returned})
+//         {
+//             ret->push_back(response); // Fill the response into the response queue
+//         }
+
+//         return true; // Fast-forward
+//     }
+//     break;
+//     default:
+//         break;
+//     }
+// #endif //HISTORY_BASED_PAGE_SELECTION
+// #endif // MEMORY_USE_SWAPPING_UNIT
+// for debug
+if(states==SwappingState::Swapping) {
+    std::cout << "add_rq while swapping" << std::endl;
+}
+// for debug end
+// -----------------------------
     /* Check swapping below */
     uint8_t under_swapping = check_request(packet, type);
     switch (under_swapping)
@@ -618,8 +672,7 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
     default:
         break;
     }
-#endif // MEMORY_USE_SWAPPING_UNIT
-
+// ---------------------------
     DRAM_CHANNEL::request_type rq_it = DRAM_CHANNEL::request_type {packet};
     rq_it.forward_checked            = false;
     rq_it.event_cycle                = current_cycle;
@@ -1412,8 +1465,11 @@ uint8_t MEMORY_CONTROLLER<T, T2>::check_address(uint64_t address, uint8_t type)
     os_transparent_management.physical_to_hardware_address(address);
 #else
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    address >>= LOG2_PAGE_SIZE;
+#else
     address >>= LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
     uint8_t segment_index;
     uint8_t entry_index;
     // Calculate entry index in the fashion of little-endian.

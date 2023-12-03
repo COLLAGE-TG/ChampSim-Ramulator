@@ -31,7 +31,8 @@
 #define HOTNESS_WIDTH                         bool
 #define HOTNESS_DEFAULT_VALUE                 (false)
 
-#define EPOCH_LENGTH                          (1000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define CLEAR_COUNTER_TABLE_EPOCK_NUM         (1000) // CLEAR_COUNTER_TABLE_EPOCK_NUM エポック毎にカウンターテーブルの初期化を行う
 
 #define REMAPPING_LOCATION_WIDTH              uint8_t
 #define REMAPPING_LOCATION_WIDTH_BITS         (3) // Default: 3
@@ -72,6 +73,7 @@ public:
     uint8_t fast_memory_offset_bit; // Address format in the data management granularity
     
     uint64_t epoch_count = 0; //if epoch_count < epoch_length; スワップを始める
+    uint64_t clear_counter_tabler_epoch_count = 0;
 
     std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
     std::vector<HOTNESS_WIDTH>& hotness_table; // A hotness bit for every data block, true -> data block is hot, false -> data block is cold.
@@ -189,6 +191,10 @@ private:
     bool enqueue_remapping_request(RemappingRequest& remapping_request);
 
     bool add_new_remapping_request_to_queue(float);
+
+    void initialize_counter_table(std::vector<COUNTER_WIDTH>& table);
+
+    void initialize_hotness_table(std::vector<HOTNESS_WIDTH>& table);
 };
 
 #endif // HISTORY_BASED_PAGE_SELECTION

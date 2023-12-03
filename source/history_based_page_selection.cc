@@ -80,9 +80,17 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
     }
 
     epoch_count++;
+
     if(epoch_count >= EPOCH_LENGTH) {
         add_new_remapping_request_to_queue(queue_busy_degree);
         epoch_count = 0;
+        clear_counter_tabler_epoch_count++;
+        initialize_hotness_table(hotness_table);
+    }
+    // カウンターテーブルの初期化
+    // CLEAR_COUNTER_TABLE_EPOCK_NUMエポック毎に行う
+    if(clear_counter_tabler_epoch_count < CLEAR_COUNTER_TABLE_EPOCK_NUM) {
+        initialize_counter_table(counter_table);
     }
 
     return true;
@@ -105,7 +113,6 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                     RemappingRequest remapping_request;
                     remapping_request.address_in_fm = tmp_coldpage_data_block_address_in_fm << DATA_MANAGEMENT_OFFSET_BITS;
                     remapping_request.address_in_sm = tmp_hotpage_data_block_address_in_sm << DATA_MANAGEMENT_OFFSET_BITS;
-
                     hotness_table.at(i) = false; //coldpageが入るので変更
                     if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
                     {
@@ -233,6 +240,20 @@ bool OS_TRANSPARENT_MANAGEMENT::enqueue_remapping_request(RemappingRequest& rema
     }
 
     return true;
+}
+
+void OS_TRANSPARENT_MANAGEMENT::initialize_counter_table(std::vector<COUNTER_WIDTH>& table) {
+    uint64_t table_size = table.size();
+    for (uint64_t i = 0;i < table_size; i++) {
+        table.at(i) = 0;
+    }
+}
+
+void OS_TRANSPARENT_MANAGEMENT::initialize_hotness_table(std::vector<HOTNESS_WIDTH>& table) {
+    uint64_t table_size = table.size();
+    for (uint64_t i = 0;i < table_size; i++) {
+        table.at(i) = false;
+    }
 }
 #endif // HISTORY_BASED_PAGE_SELECTION
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
