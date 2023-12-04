@@ -38,7 +38,7 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
 {
     if (address >= total_capacity)
     {
-        std::cout << __func__ << ": address input error." << std::endl;
+        std::cout << __func__ << ": h_address input error." << std::endl;
         return false;
     }
 
@@ -55,22 +55,12 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
         {
             counter_table[data_block_address]++; // Increment its counter
         }
-
-        if (counter_table.at(data_block_address) >= hotness_threshold)
-        {
-            hotness_table.at(data_block_address) = true; // Mark hot data block
-        }
     }
     else if (type == ramulator::Request::Type::WRITE) // For write request
     {
         if (counter_table.at(data_block_address) < COUNTER_MAX_VALUE)
         {
             counter_table[data_block_address]++; // Increment its counter
-        }
-
-        if (counter_table.at(data_block_address) >= hotness_threshold)
-        {
-            hotness_table.at(data_block_address) = true; // Mark hot data block
         }
     }
     else
@@ -80,17 +70,46 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
     }
 
     epoch_count++;
-
     if(epoch_count >= EPOCH_LENGTH) {
+        choose_hotpage_with_sort();
         add_new_remapping_request_to_queue(queue_busy_degree);
         epoch_count = 0;
-        clear_counter_tabler_epoch_count++;
+        clear_counter_table_epoch_count++;
         initialize_hotness_table(hotness_table);
     }
     // カウンターテーブルの初期化
     // CLEAR_COUNTER_TABLE_EPOCK_NUMエポック毎に行う
-    if(clear_counter_tabler_epoch_count < CLEAR_COUNTER_TABLE_EPOCK_NUM) {
+    if(clear_counter_table_epoch_count >= CLEAR_COUNTER_TABLE_EPOCK_NUM) {
         initialize_counter_table(counter_table);
+        clear_counter_table_epoch_count = 0;
+    }
+
+    return true;
+}
+
+bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort() 
+{
+    std::vector<std::pair<uint64_t, uint64_t>> tmp_pages_and_count(counter_table.size()); //this.first = （data_block_address）, this.second = （counter）
+    // counter_tableを複製
+    for(uint64_t i =0; i < tmp_pages_and_count.size(); i++) {
+        tmp_pages_and_count.at(i).first = i;
+        tmp_pages_and_count.at(i).second = counter_table.at(i);
+    }
+
+    // ペアをsecond要素で降順ソート
+    std::sort(tmp_pages_and_count.begin(), tmp_pages_and_count.end(), [](const auto& a, const auto& b) {
+        return a.second > b.second;
+    });
+
+    // hotness tableを更新
+    for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
+        // カウンターが0なら終了
+        if(tmp_pages_and_count.at(i).second == 0) {
+            break;
+        }
+        uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
+        hotness_table.at(tmp_hotpage_data_block_address) = true;
+        hotness_address_queue.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
     }
 
     return true;
@@ -98,38 +117,89 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
 
 bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 {
-    for(uint64_t i = fast_memory_capacity_at_data_block_granularity; i < total_capacity_at_data_block_granularity; i++) {
-        // 低速メモリにあるホットページを発見
-        if(hotness_table.at(i) == true) {
-            uint64_t tmp_hotpage_data_block_address_in_sm = i;
-            uint64_t tmp_coldpage_data_block_address_in_fm;
-            bool is_there_coldpage_in_fm = false;
-            // 高速メモリにあるコールドページを検索
-            for(uint64_t j = 0; j < fast_memory_capacity_at_data_block_granularity; j++) {
-                if(hotness_table.at(j) == false) {
-                    is_there_coldpage_in_fm = true;
-                    tmp_coldpage_data_block_address_in_fm = j;
-                    hotness_table.at(j) = true; //これからhotpageが入るのでhotに変更
-                    RemappingRequest remapping_request;
-                    remapping_request.address_in_fm = tmp_coldpage_data_block_address_in_fm << DATA_MANAGEMENT_OFFSET_BITS;
-                    remapping_request.address_in_sm = tmp_hotpage_data_block_address_in_sm << DATA_MANAGEMENT_OFFSET_BITS;
-                    hotness_table.at(i) = false; //coldpageが入るので変更
-                    if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
-                    {
-                        enqueue_remapping_request(remapping_request);
-                    }
-                    break;
+    for(uint64_t data_block_address = 0; data_block_address < total_capacity_at_data_block_granularity; data_block_address++) {
+        // キューが空なら終了
+        if(hotness_address_queue.empty()) {
+            break;
+        }
+        // コールドページなら
+        if(hotness_table.at(data_block_address) == false) {
+            //物理アドレスからハードウェアアドレスに変換
+            uint64_t h_data_block_address = remapping_data_block_table.at(data_block_address);
+            if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) { // コールドかつ高速メモリにあるなら
+                uint64_t hotness_data_block_address = hotness_address_queue.front();
+                RemappingRequest remapping_request;
+                remapping_request.address_in_fm = data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
+                remapping_request.address_in_sm = hotness_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
+                // check
+                if(hotness_table.at(hotness_data_block_address) == false) {
+                    std::cout << "ERROR : hotpage is not hot" << std::endl;
+                    abort();
+
                 }
-            }
-            // 高速メモリにコールドページがない場合、スワップ終了
-            if(!is_there_coldpage_in_fm) {
-                std::cout << "All fast memory pages are hot" << std::endl;
+                if(remapping_request.address_in_fm == remapping_request.address_in_sm) {
+                    std::cout << "ERROR : remapping_request.address_in_fm == remapping_request.address_in_sm" << std::endl;
+                    abort();
+                }
+                hotness_address_queue.pop();
+                if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
+                {
+                    enqueue_remapping_request(remapping_request);
+                }
                 break;
             }
         }
+        
     }
+    // hotness_address_queue　初期化
+    // std::queue<uint64_t> hotness_address_queue;
+    while(!hotness_address_queue.empty()) {
+        hotness_address_queue.pop();
+    }
+
     return true;
 }
+
+// bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
+// {
+//     for(uint64_t i = fast_memory_capacity_at_data_block_granularity; i < total_capacity_at_data_block_granularity; i++) {
+//         // 低速メモリにあるホットページを発見
+//         if(hotness_table.at(i) == true) {
+//             uint64_t tmp_h_data_block_address = remapping_data_block_table.at(i);
+//             uint64_t tmp_hotpage_data_block_address_in_sm = i;
+//             uint64_t tmp_coldpage_data_block_address_in_fm;
+//             bool is_there_coldpage_in_fm = false;
+//             // 高速メモリにあるコールドページを検索
+//             for(uint64_t j = 0; j < fast_memory_capacity_at_data_block_granularity; j++) {
+//                 if(hotness_table.at(j) == false) {
+//                     is_there_coldpage_in_fm = true;
+//                     tmp_coldpage_data_block_address_in_fm = j;
+//                     RemappingRequest remapping_request;
+//                     remapping_request.address_in_fm = tmp_coldpage_data_block_address_in_fm << DATA_MANAGEMENT_OFFSET_BITS;
+//                     remapping_request.address_in_sm = tmp_hotpage_data_block_address_in_sm << DATA_MANAGEMENT_OFFSET_BITS;
+//                     // counter_tableも入れ替え
+//                     int8_t tmp_counter = counter_table.at(i);
+//                     counter_table.at(i) = counter_table.at(j);
+//                     counter_table.at(j) = tmp_counter;
+//                     // hotness_tableも入れ替え
+//                     hotness_table.at(j) = true; //これからhotpageが入るのでhotに変更
+//                     hotness_table.at(i) = false; //coldpageが入るので変更
+//                     if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
+//                     {
+//                         enqueue_remapping_request(remapping_request);
+//                     }
+//                     break;
+//                 }
+//             }
+//             // 高速メモリにコールドページがない場合、スワップ終了
+//             if(!is_there_coldpage_in_fm) {
+//                 std::cout << "All fast memory pages are hot" << std::endl;
+//                 break;
+//             }
+//         }
+//     }
+//     return true;
+// }
 
 void OS_TRANSPARENT_MANAGEMENT::physical_to_hardware_address(request_type& packet)
 {
@@ -197,6 +267,7 @@ bool OS_TRANSPARENT_MANAGEMENT::cold_data_eviction(uint64_t source_address, floa
     return false;
 }
 
+// remapping_requestに入れるアドレスは物理アドレス
 bool OS_TRANSPARENT_MANAGEMENT::enqueue_remapping_request(RemappingRequest& remapping_request)
 {
     uint64_t data_block_address        = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;

@@ -6,6 +6,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <queue>
+
 
 #include "ChampSim/champsim_constants.h"
 #include "ChampSim/channel.h"
@@ -73,10 +75,12 @@ public:
     uint8_t fast_memory_offset_bit; // Address format in the data management granularity
     
     uint64_t epoch_count = 0; //if epoch_count < epoch_length; スワップを始める
-    uint64_t clear_counter_tabler_epoch_count = 0;
+    uint64_t clear_counter_table_epoch_count = 0;
 
     std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
     std::vector<HOTNESS_WIDTH>& hotness_table; // A hotness bit for every data block, true -> data block is hot, false -> data block is cold.
+
+    std::queue<uint64_t> hotness_address_queue; //hotなアドレスをhotな順に入れる。
 
     /* Remapping request */
     struct RemappingRequest
@@ -164,7 +168,7 @@ std::vector<uint64_t>& remapping_data_block_table; //index : physical page block
     // Address is physical address and at byte granularity
     bool memory_activity_tracking(uint64_t address, ramulator::Request::Type type, access_type type_origin, float queue_busy_degree);
 #else
-    // Address is physical address and at byte granularity
+    // Address is hardware address and at byte granularity
     bool memory_activity_tracking(uint64_t address, ramulator::Request::Type type, float queue_busy_degree);
 #endif // TRACKING_LOAD_STORE_STATISTICS
 
@@ -189,6 +193,8 @@ private:
 
     // Add new remapping request into the remapping_request_queue
     bool enqueue_remapping_request(RemappingRequest& remapping_request);
+
+    bool choose_hotpage_with_sort();
 
     bool add_new_remapping_request_to_queue(float);
 
