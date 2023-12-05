@@ -74,7 +74,7 @@ public:
     uint64_t fast_memory_capacity_at_data_block_granularity;
     uint8_t fast_memory_offset_bit; // Address format in the data management granularity
     
-    uint64_t epoch_count = 0; //if epoch_count < epoch_length; スワップを始める
+    uint64_t epoch_count = 0; //if epoch_count > epoch_length; スワップを始める
     uint64_t clear_counter_table_epoch_count = 0;
 
     std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
@@ -178,6 +178,8 @@ std::vector<uint64_t>& remapping_data_block_table; //index : physical page block
 
     bool issue_remapping_request(RemappingRequest& remapping_request);
     bool finish_remapping_request();
+    bool epoch_check();
+    bool remapping_request_queue_has_elements();
 
     // Detect cold data block
     void cold_data_detection();

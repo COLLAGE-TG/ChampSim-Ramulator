@@ -85,7 +85,7 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
     }
 
     return true;
-}
+} 
 
 bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort() 
 {
@@ -255,6 +255,33 @@ bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
         return false; // Error
     }
     return true;
+}
+
+
+bool OS_TRANSPARENT_MANAGEMENT::epoch_check()
+{   
+    if(epoch_count == EPOCH_LENGTH) return true;
+    else if(epoch_count > EPOCH_LENGTH) { // チェック
+        std::cout << "epoch_length > EPOCH_LENGTH" << std::endl; 
+        std::cout << "epoch_length = " << epoch_count << std::endl;
+        abort();
+    }
+    else if(epoch_count < EPOCH_LENGTH) return false;
+    else { // 通常はここには来ない
+            std::cout << "epoch_lengthの値が異常です。" << std::endl; 
+            std::cout << "epoch_length = " << epoch_count << std::endl;
+            abort();
+    }
+}
+
+bool OS_TRANSPARENT_MANAGEMENT::remapping_request_queue_has_elements()
+{
+    if(remapping_request_queue.empty() == false) return true;
+    else if(remapping_request_queue.empty() == true) return false;
+    else {
+        std::cout << "ERROR : remapping_request_queue_has_elements()" << std::endl;
+        abort();
+    }
 }
 
 void OS_TRANSPARENT_MANAGEMENT::cold_data_detection()

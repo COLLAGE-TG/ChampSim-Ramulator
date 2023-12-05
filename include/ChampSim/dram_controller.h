@@ -188,7 +188,9 @@ private:
     // This function is used by memory controller in add_rq() and add_wq().
     uint8_t check_request(request_type& packet, ramulator::Request::Type type); // Packet needs to prepare its hardware address.
     uint8_t check_address(uint64_t address, uint8_t type);                      // The address is physical address.
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    void swap_all_start(uint64_t swap_count_between_epoch);
+#endif
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
 
@@ -386,6 +388,20 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    /* Operate swapping below */
+    // エポック終了時にスワップ開始
+    bool swap_start = os_transparent_management.epoch_check();
+    if(swap_start) {
+        // for debug
+        uint64_t swap_count_between_epoch = 0;
+        // for debug
+        swap_all_start(swap_count_between_epoch);
+        // for debug
+        std::cout << "swap_count_between_epoch = " << swap_count_between_epoch << std::endl;
+        // for debug
+    }
+#else
     /* Operate swapping below */
     uint8_t swapping_states = operate_swapping();
     switch (swapping_states)
@@ -401,8 +417,6 @@ long MEMORY_CONTROLLER<T, T2>::operate()
             start_swapping_segments(remapping_request.address_in_fm, remapping_request.address_in_sm, remapping_request.size);
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             start_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
-#elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-            start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD, HISTORY_BASED_PAGE_SELECTION
         }
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
@@ -467,7 +481,9 @@ long MEMORY_CONTROLLER<T, T2>::operate()
     default:
         break;
     }
+#endif //HISTORY_BASED_PAGE_SELECTION
 #else
+
 
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     // Since we don't consider data swapping overhead here, the data swapping is finished immediately
@@ -660,7 +676,8 @@ if(states==SwappingState::Swapping) {
     case 2: // Though this address is under swapping, we can service its request because the data is in the swapping buffer.
     {
         response_type response {packet.address, packet.v_address, packet.data, packet.pf_metadata, packet.instr_depend_on_me};
-
+        
+        // 一度しか実行されない
         for (auto ret : {&ul->returned})
         {
             ret->push_back(response); // Fill the response into the response queue
@@ -1163,6 +1180,33 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
     return false;
 }
 #endif // HISTORY_BASED_PAGE_SELECTION
+
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+// swap操作は全てこの関数で完結させる
+template<class T, class T2>
+void MEMORY_CONTROLLER<T, T2>::swap_all_start(uint64_t swap_count_between_epoch)
+{
+    // queueの中身全てのremappingを行う
+    while(os_transparent_management.remapping_request_queue_has_elements()) {
+        // for debug
+        swap_count_between_epoch++;
+        // for debug
+        OS_TRANSPARENT_MANAGEMENT::RemappingRequest remapping_request;
+        // remapping_request発行
+        bool issue = os_transparent_management.issue_remapping_request(remapping_request);
+        // チェック
+        if (issue == false) {
+            std::cout << "ERROR : The remapping request has no content." << std::endl;
+            abort();
+        }
+
+        start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
+        // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
+        os_transparent_management.finish_remapping_request();
+        initialize_swapping();
+    }
+}
+#endif
 
 template<class T, class T2>
 uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
