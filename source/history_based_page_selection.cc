@@ -78,8 +78,8 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
         initialize_hotness_table(hotness_table);
     }
     // カウンターテーブルの初期化
-    // CLEAR_COUNTER_TABLE_EPOCK_NUMエポック毎に行う
-    if(clear_counter_table_epoch_count >= CLEAR_COUNTER_TABLE_EPOCK_NUM) {
+    // CLEAR_COUNTER_TABLE_EPOCH_NUMエポック毎に行う
+    if(clear_counter_table_epoch_count >= CLEAR_COUNTER_TABLE_EPOCH_NUM) {
         initialize_counter_table(counter_table);
         clear_counter_table_epoch_count = 0;
     }
@@ -117,6 +117,9 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
 
 bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 {
+// #if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用
+//     bool first_flag = true;
+// #endif
     for(uint64_t data_block_address = 0; data_block_address < total_capacity_at_data_block_granularity; data_block_address++) {
         // キューが空なら終了
         if(hotness_address_queue.empty()) {
@@ -146,11 +149,54 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                 {
                     enqueue_remapping_request(remapping_request);
                 }
-                break;
+                else {
+                    std::cout << "WARNING : remapping request queue is full" << std::endl;
+                    break;
+                }
+
+#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用
+                if(first_swap_epoch) {
+                    if(!remapping_request_queue.empty()) {
+                        if(first_swap) {
+                            // デバッグ結果を出力するファイルをオープン
+                            std::cout << "make check_remapping_request.txt" << std::endl;
+                            std::ofstream output_debug_file("check_remapping_request.txt", std::ios::trunc);
+                            if(output_debug_file.is_open()) {
+                                output_debug_file << "---------------remapping request---------------" << std::endl;
+                                output_debug_file << "remapping_request.address_in_fm data block" << " : " << "remapping_request.address_in_sm data block" << std::endl;
+                                output_debug_file.close();
+                            }
+                            else {
+                                std::cout << "ERROR : file cannot open" << std::endl;
+                            }
+                            first_swap = false;
+                        }
+                        else {
+                            std::ofstream output_debug_file("check_remapping_request.txt", std::ios::app);
+                            if(output_debug_file.is_open()) {
+                                uint64_t tmp_data_block_in_fm = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
+                                uint64_t tmp_data_block_in_sm = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
+                                output_debug_file << tmp_data_block_in_fm << " : " << tmp_data_block_in_sm << std::endl;
+                                output_debug_file.close();
+                            }
+                            else {
+                                std::cout << "ERROR : debug result file cannot open" << std::endl;
+                                abort();
+                            }
+                        }
+                    }
+                }
+#endif
             }
         }
-        
     }
+#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用 
+// 一回記録した。 
+    if(!first_swap) {
+        first_swap_epoch = false;
+    }
+#endif
+
     // hotness_address_queue　初期化
     // std::queue<uint64_t> hotness_address_queue;
     while(!hotness_address_queue.empty()) {
@@ -237,7 +283,13 @@ bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
 
         uint64_t data_block_address_in_fm        = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
         uint64_t data_block_address_in_sm        = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
-        
+
+        // debug
+        if(data_block_address_in_fm == data_block_address_in_sm) {
+            std::cout << "data_block_address_in_fm == data_block_address_in_sm" << std::endl;
+            abort();
+        }
+                
         remapping_data_block_table.at(data_block_address_in_fm) = data_block_address_in_sm;
         remapping_data_block_table.at(data_block_address_in_sm) = data_block_address_in_fm;
 
@@ -274,15 +326,15 @@ bool OS_TRANSPARENT_MANAGEMENT::epoch_check()
     }
 }
 
-bool OS_TRANSPARENT_MANAGEMENT::remapping_request_queue_has_elements()
-{
-    if(remapping_request_queue.empty() == false) return true;
-    else if(remapping_request_queue.empty() == true) return false;
-    else {
-        std::cout << "ERROR : remapping_request_queue_has_elements()" << std::endl;
-        abort();
-    }
-}
+// bool OS_TRANSPARENT_MANAGEMENT::remapping_request_queue_has_elements()
+// {
+//     if(remapping_request_queue.empty() == false) return true;
+//     else if(remapping_request_queue.empty() == true) return false;
+//     else {
+//         std::cout << "ERROR : remapping_request_queue_has_elements()" << std::endl;
+//         abort();
+//     }
+// }
 
 void OS_TRANSPARENT_MANAGEMENT::cold_data_detection()
 {

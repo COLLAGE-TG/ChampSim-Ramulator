@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 #include <queue>
+#include <iostream>
+#include <fstream>
 
 
 #include "ChampSim/champsim_constants.h"
@@ -34,7 +36,7 @@
 #define HOTNESS_DEFAULT_VALUE                 (false)
 
 #define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
-#define CLEAR_COUNTER_TABLE_EPOCK_NUM         (1000) // CLEAR_COUNTER_TABLE_EPOCK_NUM エポック毎にカウンターテーブルの初期化を行う
+#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1000) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
 #define REMAPPING_LOCATION_WIDTH              uint8_t
 #define REMAPPING_LOCATION_WIDTH_BITS         (3) // Default: 3
@@ -74,8 +76,13 @@ public:
     uint64_t fast_memory_capacity_at_data_block_granularity;
     uint8_t fast_memory_offset_bit; // Address format in the data management granularity
     
-    uint64_t epoch_count = 0; //if epoch_count > epoch_length; スワップを始める
+    uint64_t epoch_count = 0; //if epoch_count > epoch_length; スワップを始める 0に初期化する
     uint64_t clear_counter_table_epoch_count = 0;
+#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用
+    bool first_swap = true;
+    bool first_swap_epoch = true;   
+    bool first_swap_epoch_for_dram_controller = true;
+#endif
 
     std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
     std::vector<HOTNESS_WIDTH>& hotness_table; // A hotness bit for every data block, true -> data block is hot, false -> data block is cold.
@@ -179,7 +186,7 @@ std::vector<uint64_t>& remapping_data_block_table; //index : physical page block
     bool issue_remapping_request(RemappingRequest& remapping_request);
     bool finish_remapping_request();
     bool epoch_check();
-    bool remapping_request_queue_has_elements();
+    // bool remapping_request_queue_has_elements();
 
     // Detect cold data block
     void cold_data_detection();

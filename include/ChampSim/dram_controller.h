@@ -189,7 +189,7 @@ private:
     uint8_t check_request(request_type& packet, ramulator::Request::Type type); // Packet needs to prepare its hardware address.
     uint8_t check_address(uint64_t address, uint8_t type);                      // The address is physical address.
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-    void swap_all_start(uint64_t swap_count_between_epoch);
+    uint64_t swap_all_start();
 #endif
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
@@ -390,13 +390,13 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
     /* Operate swapping below */
-    // エポック終了時にスワップ開始
-    bool swap_start = os_transparent_management.epoch_check();
+    // リマッピングリクエストが発行されたらスワップ開始
+    bool swap_start = !os_transparent_management.remapping_request_queue.empty();
     if(swap_start) {
         // for debug
         uint64_t swap_count_between_epoch = 0;
         // for debug
-        swap_all_start(swap_count_between_epoch);
+        swap_count_between_epoch = swap_all_start();
         // for debug
         std::cout << "swap_count_between_epoch = " << swap_count_between_epoch << std::endl;
         // for debug
@@ -1184,10 +1184,11 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 // swap操作は全てこの関数で完結させる
 template<class T, class T2>
-void MEMORY_CONTROLLER<T, T2>::swap_all_start(uint64_t swap_count_between_epoch)
+uint64_t MEMORY_CONTROLLER<T, T2>::swap_all_start()
 {
+    uint64_t swap_count_between_epoch=0;
     // queueの中身全てのremappingを行う
-    while(os_transparent_management.remapping_request_queue_has_elements()) {
+    while(!os_transparent_management.remapping_request_queue.empty()) {
         // for debug
         swap_count_between_epoch++;
         // for debug
@@ -1199,12 +1200,54 @@ void MEMORY_CONTROLLER<T, T2>::swap_all_start(uint64_t swap_count_between_epoch)
             std::cout << "ERROR : The remapping request has no content." << std::endl;
             abort();
         }
+        // debug
+        // if(os_transparent_management.first_swap_epoch_for_dram_controller) {
+        //     std::ofstream output_debug_File_rem_que("check_remapping_request_in_dram_controller.txt", std::ios::trunc);
+        //     // ファイルが正しく開かれたかチェック
+        //     if (output_debug_File_rem_que.is_open()) {
+        //         output_debug_File_rem_que << "---------------remapping_request_in_dram_controller---------------" << std::endl;
+        //         output_debug_File_rem_que << "remapping_request.address_in_fm : remapping_request.address_in_sm" << std::endl;
+        //         output_debug_File_rem_que << remapping_request.address_in_fm << " : " << remapping_request.address_in_sm << std::endl;
+        //         output_debug_File_rem_que.close();
+        //     }
+        //     else {
+        //         std::cout << "output_debug_File cannot open. check_remapping_request_in_dram_controller.txt" << std::endl;
+        //         abort();
+        //     }
+        // }
+        // debug
+
 
         start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
         // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
         os_transparent_management.finish_remapping_request();
         initialize_swapping();
     }
+
+#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ
+    // 最初のエポックだけ出力
+    if(os_transparent_management.first_swap_epoch_for_dram_controller) {
+        std::cout << "make check_remapping_data_block_table.txt" << std::endl;
+        std::ofstream output_debug_File("check_remapping_data_block_table.txt", std::ios::trunc);
+        // ファイルが正しく開かれたかチェック
+        if (output_debug_File.is_open()) {
+            output_debug_File << "---------------remapping_data_block_table---------------" << std::endl;
+            output_debug_File << "physical address : hardware address" << std::endl;
+            // ここから下は不安
+            for (uint64_t i = 0; i < os_transparent_management.remapping_data_block_table.size(); i++) {
+                output_debug_File << i << " : " << os_transparent_management.remapping_data_block_table.at(i) << std::endl;
+            }
+            output_debug_File.close();
+        }
+        else {
+            std::cout << "output_debug_File cannot open" << std::endl;
+            abort();
+        }
+        os_transparent_management.first_swap_epoch_for_dram_controller = false;
+    }
+#endif //CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES
+
+    return swap_count_between_epoch;
 }
 #endif
 

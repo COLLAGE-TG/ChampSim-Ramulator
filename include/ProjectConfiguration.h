@@ -6,7 +6,8 @@
 
 #define DEBUG_PRINTF (DISABLE)
 #define USER_CODES   (ENABLE)
-
+ 
+#define CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES (ENABLE) // History based page selectionのswapが正常に行われているかどうかをチェックする
 /* Functionality options */
 #if (USER_CODES == ENABLE)
 /** Main functionalities selection */
