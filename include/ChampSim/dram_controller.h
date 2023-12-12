@@ -189,7 +189,8 @@ private:
     uint8_t check_request(request_type& packet, ramulator::Request::Type type); // Packet needs to prepare its hardware address.
     uint8_t check_address(uint64_t address, uint8_t type);                      // The address is physical address.
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-    uint64_t swap_all_start();
+    void swap_all_start();
+    // void migration_all_start();
 #endif
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
@@ -393,13 +394,11 @@ long MEMORY_CONTROLLER<T, T2>::operate()
     // リマッピングリクエストが発行されたらスワップ開始
     bool swap_start = !os_transparent_management.remapping_request_queue.empty();
     if(swap_start) {
-        // for debug
-        uint64_t swap_count_between_epoch = 0;
-        // for debug
-        swap_count_between_epoch = swap_all_start();
-        // for debug
-        std::cout << "swap_count_between_epoch = " << swap_count_between_epoch << std::endl;
-        // for debug
+        // swap中は他の操作を行わない
+        // swap_all_start();
+        std::thread thread1([this] { swap_all_start(); });
+        // std::thread thread1([this] { migration_all_start(); });
+        thread1.join();   
     }
 #else
     /* Operate swapping below */
@@ -1182,9 +1181,15 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
 #endif // HISTORY_BASED_PAGE_SELECTION
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+// migrationは全てこの関数で完結させる
+// template<class T, class T2>
+// void MEMORY_CONTROLLER<T, T2>::migration_all_start()
+// {
+
+// }
 // swap操作は全てこの関数で完結させる
 template<class T, class T2>
-uint64_t MEMORY_CONTROLLER<T, T2>::swap_all_start()
+void MEMORY_CONTROLLER<T, T2>::swap_all_start()
 {
     uint64_t swap_count_between_epoch=0;
     // queueの中身全てのremappingを行う
@@ -1200,31 +1205,13 @@ uint64_t MEMORY_CONTROLLER<T, T2>::swap_all_start()
             std::cout << "ERROR : The remapping request has no content." << std::endl;
             abort();
         }
-        // debug
-        // if(os_transparent_management.first_swap_epoch_for_dram_controller) {
-        //     std::ofstream output_debug_File_rem_que("check_remapping_request_in_dram_controller.txt", std::ios::trunc);
-        //     // ファイルが正しく開かれたかチェック
-        //     if (output_debug_File_rem_que.is_open()) {
-        //         output_debug_File_rem_que << "---------------remapping_request_in_dram_controller---------------" << std::endl;
-        //         output_debug_File_rem_que << "remapping_request.address_in_fm : remapping_request.address_in_sm" << std::endl;
-        //         output_debug_File_rem_que << remapping_request.address_in_fm << " : " << remapping_request.address_in_sm << std::endl;
-        //         output_debug_File_rem_que.close();
-        //     }
-        //     else {
-        //         std::cout << "output_debug_File cannot open. check_remapping_request_in_dram_controller.txt" << std::endl;
-        //         abort();
-        //     }
-        // }
-        // debug
-
-
         start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
         // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
         os_transparent_management.finish_remapping_request();
         initialize_swapping();
     }
 
-#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ
+#if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ
     // 最初のエポックだけ出力
     if(os_transparent_management.first_swap_epoch_for_dram_controller) {
         std::cout << "make check_remapping_data_block_table.txt" << std::endl;
@@ -1245,9 +1232,12 @@ uint64_t MEMORY_CONTROLLER<T, T2>::swap_all_start()
         }
         os_transparent_management.first_swap_epoch_for_dram_controller = false;
     }
-#endif //CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES
+#endif //TEST_HISTORY_BASED_PAGE_SELECTION
 
-    return swap_count_between_epoch;
+    // swapにかかったオーバーヘッドを追加
+    current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * swap_count_between_epoch;
+    current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * swap_count_between_epoch;
+    current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * swap_count_between_epoch;    
 }
 #endif
 

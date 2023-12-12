@@ -103,6 +103,14 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
 
     // hotness tableを更新
     for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
+        // check
+        if(i != fast_memory_capacity_at_data_block_granularity-1) {
+            if(tmp_pages_and_count.at(i).second < tmp_pages_and_count.at(i+1).second) {
+                std::cout << "ERROR:tmp_pages_and_count was not sorted." << std::endl;
+                abort();
+            }
+        }
+
         // カウンターが0なら終了
         if(tmp_pages_and_count.at(i).second == 0) {
             break;
@@ -117,9 +125,6 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
 
 bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 {
-// #if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用
-//     bool first_flag = true;
-// #endif
     for(uint64_t data_block_address = 0; data_block_address < total_capacity_at_data_block_granularity; data_block_address++) {
         // キューが空なら終了
         if(hotness_address_queue.empty()) {
@@ -154,7 +159,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                     break;
                 }
 
-#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用
+#if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ用
                 if(first_swap_epoch) {
                     if(!remapping_request_queue.empty()) {
                         if(first_swap) {
@@ -190,7 +195,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
             }
         }
     }
-#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用 
+#if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ用 
 // 一回記録した。 
     if(!first_swap) {
         first_swap_epoch = false;

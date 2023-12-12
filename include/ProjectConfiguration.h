@@ -6,8 +6,8 @@
 
 #define DEBUG_PRINTF (DISABLE)
 #define USER_CODES   (ENABLE)
- 
-#define CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES (ENABLE) // History based page selectionのswapが正常に行われているかどうかをチェックする
+//  test
+#define TEST_HISTORY_BASED_PAGE_SELECTION (DISABLE) // History based page selectionのswapが正常に行われているかどうかをチェックする
 /* Functionality options */
 #if (USER_CODES == ENABLE)
 /** Main functionalities selection */
@@ -26,11 +26,11 @@
 #define NUMBER_OF_MEMORIES (2U) // We use two memories for hybrid memory system.
 #define MEMORY_NUMBER_ONE  (0u)
 #define MEMORY_NUMBER_TWO  (1u)
-// need changing HBM-config.cfg to change HBM capacity
-#define ADD_HBM_128MB      (DISABLE) 
-#define ADD_HBM_64MB      (DISABLE)
-#define ADD_HBM_8MB      (ENABLE)
-#define ADD_HBM_1MB      (DISABLE) //It has issues with CAMEO and similar tools; they are not functioning properly.
+
+#define ADD_HBM_128MB      (DISABLE) // need changing HBM-config.cfg to change HBM capacity
+#define ADD_HBM_64MB      (DISABLE) // need changing HBM-config.cfg to change HBM capacity
+#define ADD_HBM_8MB      (ENABLE) // need changing HBM-config.cfg to change HBM capacity
+#define ADD_HBM_1MB      (DISABLE) // need changing HBM-config.cfg to change HBM capacity. It has issues with CAMEO and similar tools; they are not functioning properly.
 #else
 #define NUMBER_OF_MEMORIES (1u)
 #endif // MEMORY_USE_HYBRID

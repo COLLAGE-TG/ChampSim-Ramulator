@@ -38,6 +38,11 @@
 #define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1000) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
+// overheads
+#define OVERHEAD_OF_MIGRATION_PER_PAGE        (1000) //cycles
+#define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
+#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (1000) //cycles
+
 #define REMAPPING_LOCATION_WIDTH              uint8_t
 #define REMAPPING_LOCATION_WIDTH_BITS         (3) // Default: 3
 #define LOCATION_TABLE_ENTRY_WIDTH            uint16_t
@@ -78,7 +83,7 @@ public:
     
     uint64_t epoch_count = 0; //if epoch_count > epoch_length; スワップを始める 0に初期化する
     uint64_t clear_counter_table_epoch_count = 0;
-#if (CHECK_REMAPPING_PAGE_TABLE_AND_HOT_PAGES == ENABLE) // デバッグ用
+#if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ用
     bool first_swap = true;
     bool first_swap_epoch = true;   
     bool first_swap_epoch_for_dram_controller = true;
