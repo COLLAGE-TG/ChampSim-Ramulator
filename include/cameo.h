@@ -18,6 +18,7 @@
  *  SM -> Slow memory (e.g., DDR4, PCM)
 */
 
+
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
 
 #if (IDEAL_LINE_LOCATION_TABLE == ENABLE) || (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
@@ -51,6 +52,32 @@
 #define REMAPPING_LOCATION_WIDTH_BITS (champsim::lg2(64))
 #define NUMBER_OF_BLOCK               (35)
 #endif // BITS_MANIPULATION
+
+// uint64_t型の値を二進数の文字列に変換する関数
+// デバッグ用
+inline std::string uint64_to_binary_string(uint64_t value) {
+    std::string binaryString;
+    
+    // 各ビットを調べて文字列に追加
+    for (int i = 63; i >= 0; --i) {
+        char bit = (value & (1ULL << i)) ? '1' : '0';
+        binaryString.push_back(bit);
+    }
+
+    return binaryString;
+}
+// uint8_t型の値を二進数の文字列に変換する関数
+inline std::string uint8_to_binary_string(uint8_t value) {
+    std::string binaryString;
+    
+    // 各ビットを調べて文字列に追加
+    for (int i = 7; i >= 0; --i) {
+        char bit = (value & (1 << i)) ? '1' : '0';
+        binaryString.push_back(bit);
+    }
+
+    return binaryString;
+}
 
 class OS_TRANSPARENT_MANAGEMENT
 {

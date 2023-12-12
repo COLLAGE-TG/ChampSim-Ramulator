@@ -161,9 +161,9 @@
             // Below are parmeters input into the executable file
             "args": [
                 "--warmup-instructions",
-                "10000", // 1000000
+                "1000000", // 1000000
                 "--simulation-instructions",
-                "100000",
+                "200000000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
                 "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/dpc3_traces/619.lbm_s-4268B.champsimtrace.xz"

@@ -47,6 +47,8 @@
 #include "Ramulator/Memory.h"
 #include "Ramulator/Request.h"
 
+#include <thread>
+
 /* Macro */
 
 /* Type */
@@ -82,6 +84,18 @@ public:
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
     /* Swapping unit */
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    struct BUFFER_ENTRY
+    {
+        bool finish                                                   = false; // Whether a swapping of this entry is completed.
+
+        std::array<uint64_t, PAGE_SIZE> data[SWAPPING_SEGMENT_NUMBER] = {0}; // Pages
+        bool read_issue[SWAPPING_SEGMENT_NUMBER];                            // Whether a read request is issued
+        bool read[SWAPPING_SEGMENT_NUMBER];                                  // Whether a read request is finished
+        bool write[SWAPPING_SEGMENT_NUMBER];                                 // Whether a write request is finished
+        bool dirty[SWAPPING_SEGMENT_NUMBER];                                 // Whether a "new" write request is received
+    };
+#else // HISTORY_BASED_PAGE_SELECTION
     struct BUFFER_ENTRY
     {
         bool finish                                                   = false; // Whether a swapping of this entry is completed.
@@ -92,6 +106,7 @@ public:
         bool write[SWAPPING_SEGMENT_NUMBER];                                 // Whether a write request is finished
         bool dirty[SWAPPING_SEGMENT_NUMBER];                                 // Whether a "new" write request is received
     };
+#endif // HISTORY_BASED_PAGE_SELECTION
 
     std::array<BUFFER_ENTRY, SWAPPING_BUFFER_ENTRY_NUMBER> buffer = {};
     uint64_t base_address[SWAPPING_SEGMENT_NUMBER]; // Here base_address[0] for segment 1, base_address[1] for segment 2. Address is hardware address and at cache line granularity.
@@ -150,11 +165,16 @@ public:
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
 public:
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    // Input address should be hardware address and at byte granularity
+    bool start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2);
+#else
     // Input address should be hardware address and at byte granularity
     bool start_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size);
-
     // Input address should be hardware address and at byte granularity
     bool update_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size);
+#endif // HISTORY_BASED_PAGE_SELECTION
+    
 
 private:
     /* Member functions for swapping */
@@ -168,9 +188,13 @@ private:
     // This function is used by memory controller in add_rq() and add_wq().
     uint8_t check_request(request_type& packet, ramulator::Request::Type type); // Packet needs to prepare its hardware address.
     uint8_t check_address(uint64_t address, uint8_t type);                      // The address is physical address.
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    void swap_all_start();
+    // void migration_all_start();
+#endif
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
+
 
 template<typename T, typename T2>
 MEMORY_CONTROLLER<T, T2>::MEMORY_CONTROLLER(double freq_scale, double clock_scale, double clock_scale2, std::vector<channel_type*>&& ul, ramulator::Memory<T, ramulator::Controller>& memory, ramulator::Memory<T2, ramulator::Controller>& memory2)
@@ -365,6 +389,18 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    /* Operate swapping below */
+    // リマッピングリクエストが発行されたらスワップ開始
+    bool swap_start = !os_transparent_management.remapping_request_queue.empty();
+    if(swap_start) {
+        // swap中は他の操作を行わない
+        // swap_all_start();
+        std::thread thread1([this] { swap_all_start(); });
+        // std::thread thread1([this] { migration_all_start(); });
+        thread1.join();   
+    }
+#else
     /* Operate swapping below */
     uint8_t swapping_states = operate_swapping();
     switch (swapping_states)
@@ -380,7 +416,7 @@ long MEMORY_CONTROLLER<T, T2>::operate()
             start_swapping_segments(remapping_request.address_in_fm, remapping_request.address_in_sm, remapping_request.size);
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             start_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
-#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD
+#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD, HISTORY_BASED_PAGE_SELECTION
         }
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
     }
@@ -398,6 +434,7 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             update_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD
+// HISTORY_BASED_PAGE_SELECTIONではswapのupdateは起きない
         }
         else
         {
@@ -421,6 +458,7 @@ long MEMORY_CONTROLLER<T, T2>::operate()
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
             is_updated = update_swapping_segments(remapping_request.h_address_in_fm, remapping_request.h_address_in_sm, remapping_request.size);
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_SINGLE_MEMPOD
+// HISTORY_BASED_PAGE_SELECTIONではswapのupdateは起きない
         }
         else
         {
@@ -442,7 +480,9 @@ long MEMORY_CONTROLLER<T, T2>::operate()
     default:
         break;
     }
+#endif //HISTORY_BASED_PAGE_SELECTION
 #else
+
 
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     // Since we don't consider data swapping overhead here, the data swapping is finished immediately
@@ -568,7 +608,59 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
 #endif // TRACKING_LOAD_STORE_STATISTICS
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
-#if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+// #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+// #if (HISTORY_BASED_PAGE_SELECTION == ENABLE) //この部分は不安が残る。サイクル数をインクリメントする必要があるかどうかも気になる。
+//     // swapが終わるまで待機
+//     // for debug
+//     // bool debug_flag=false;
+//     // // for debug
+//     // while(states == SwappingState::Swapping) {
+//     //     std::this_thread::sleep_for(std::chrono::milliseconds(10)); //0.01秒ごとに確認
+//     //     // std::cout << "stall!" << std::endl;
+//     //     // for debug
+//     //     if(!debug_flag) {debug_flag=true;}
+//     //     // for debug
+//     // }
+//     // // for debug
+//     // if(debug_flag) {
+//     // std::cout << "=========swap end============" << std::endl;
+//     // }
+//     // for debug
+// #elif
+//     /* Check swapping below */
+//     uint8_t under_swapping = check_request(packet, type);
+//     switch (under_swapping)
+//     {
+//     case 0: // This address is under swapping.
+//     {
+//         return false; // Queue is full, note Ramulator doesn't merge requests.
+//     }
+//     break;
+//     case 1: // This address is not under swapping.
+//         break;
+//     case 2: // Though this address is under swapping, we can service its request because the data is in the swapping buffer.
+//     {
+//         response_type response {packet.address, packet.v_address, packet.data, packet.pf_metadata, packet.instr_depend_on_me};
+
+//         for (auto ret : {&ul->returned})
+//         {
+//             ret->push_back(response); // Fill the response into the response queue
+//         }
+
+//         return true; // Fast-forward
+//     }
+//     break;
+//     default:
+//         break;
+//     }
+// #endif //HISTORY_BASED_PAGE_SELECTION
+// #endif // MEMORY_USE_SWAPPING_UNIT
+// for debug
+if(states==SwappingState::Swapping) {
+    std::cout << "add_rq while swapping" << std::endl;
+}
+// for debug end
+// -----------------------------
     /* Check swapping below */
     uint8_t under_swapping = check_request(packet, type);
     switch (under_swapping)
@@ -583,7 +675,8 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
     case 2: // Though this address is under swapping, we can service its request because the data is in the swapping buffer.
     {
         response_type response {packet.address, packet.v_address, packet.data, packet.pf_metadata, packet.instr_depend_on_me};
-
+        
+        // 一度しか実行されない
         for (auto ret : {&ul->returned})
         {
             ret->push_back(response); // Fill the response into the response queue
@@ -595,8 +688,7 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
     default:
         break;
     }
-#endif // MEMORY_USE_SWAPPING_UNIT
-
+// ---------------------------
     DRAM_CHANNEL::request_type rq_it = DRAM_CHANNEL::request_type {packet};
     rq_it.forward_checked            = false;
     rq_it.event_cycle                = current_cycle;
@@ -968,9 +1060,30 @@ template<class T, class T2>
 void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
 {
     swapping_count += active_entry_number * 2;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    swapping_traffic_in_bytes += active_entry_number * 2 * PAGE_SIZE;
+#else
     swapping_traffic_in_bytes += active_entry_number * 2 * BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
 
     states = SwappingState::Idle;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    for (auto i = 0; i < SWAPPING_BUFFER_ENTRY_NUMBER; i++)
+    {
+        buffer[i].finish = false;
+        for (auto j = 0; j < SWAPPING_SEGMENT_NUMBER; j++)
+        {
+            for (uint64_t z = 0; z < PAGE_SIZE; z++)
+            {
+                buffer[i].data[j][z] = 0;
+            }
+            buffer[i].read_issue[j] = false;
+            buffer[i].read[j]       = false;
+            buffer[i].write[j]      = false;
+            buffer[i].dirty[j]      = false;
+        }
+    }
+#else
     for (auto i = 0; i < SWAPPING_BUFFER_ENTRY_NUMBER; i++)
     {
         buffer[i].finish = false;
@@ -986,6 +1099,9 @@ void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
             buffer[i].dirty[j]      = false;
         }
     }
+#endif // HISTORY_BASED_PAGE_SELECTION
+
+    
 
     for (auto i = 0; i < SWAPPING_SEGMENT_NUMBER; i++)
     {
@@ -994,6 +1110,25 @@ void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
     active_entry_number = finish_number = 0;
 }
 
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+// Input address should be hardware address and at byte granularity
+template<class T, class T2>
+bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments_for_page_size(uint64_t address_1, uint64_t address_2)
+{
+    if (states == SwappingState::Idle)
+    {
+        states              = SwappingState::Swapping;      // Start swapping.
+        base_address[0]     = address_1 >> LOG2_PAGE_SIZE; // The single swapping is conducted at cache line granularity.
+        base_address[1]     = address_2 >> LOG2_PAGE_SIZE;
+        active_entry_number = 1; //active_entry_numberはページの数を表す。
+    }
+    else
+    {
+        return false; // This swapping unit is busy, it cannot issue new swapping request.
+    }
+    return true; // New swapping is issued.
+}
+#else
 // Input address should be hardware address and at byte granularity
 template<class T, class T2>
 bool MEMORY_CONTROLLER<T, T2>::start_swapping_segments(uint64_t address_1, uint64_t address_2, uint8_t size)
@@ -1043,6 +1178,68 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
 
     return false;
 }
+#endif // HISTORY_BASED_PAGE_SELECTION
+
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+// migrationは全てこの関数で完結させる
+// template<class T, class T2>
+// void MEMORY_CONTROLLER<T, T2>::migration_all_start()
+// {
+
+// }
+// swap操作は全てこの関数で完結させる
+template<class T, class T2>
+void MEMORY_CONTROLLER<T, T2>::swap_all_start()
+{
+    uint64_t swap_count_between_epoch=0;
+    // queueの中身全てのremappingを行う
+    while(!os_transparent_management.remapping_request_queue.empty()) {
+        // for debug
+        swap_count_between_epoch++;
+        // for debug
+        OS_TRANSPARENT_MANAGEMENT::RemappingRequest remapping_request;
+        // remapping_request発行
+        bool issue = os_transparent_management.issue_remapping_request(remapping_request);
+        // チェック
+        if (issue == false) {
+            std::cout << "ERROR : The remapping request has no content." << std::endl;
+            abort();
+        }
+        start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
+        // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
+        os_transparent_management.finish_remapping_request();
+        initialize_swapping();
+    }
+
+#if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ
+    // 最初のエポックだけ出力
+    if(os_transparent_management.first_swap_epoch_for_dram_controller) {
+        std::cout << "make check_remapping_data_block_table.txt" << std::endl;
+        std::ofstream output_debug_File("check_remapping_data_block_table.txt", std::ios::trunc);
+        // ファイルが正しく開かれたかチェック
+        if (output_debug_File.is_open()) {
+            output_debug_File << "---------------remapping_data_block_table---------------" << std::endl;
+            output_debug_File << "physical address : hardware address" << std::endl;
+            // ここから下は不安
+            for (uint64_t i = 0; i < os_transparent_management.remapping_data_block_table.size(); i++) {
+                output_debug_File << i << " : " << os_transparent_management.remapping_data_block_table.at(i) << std::endl;
+            }
+            output_debug_File.close();
+        }
+        else {
+            std::cout << "output_debug_File cannot open" << std::endl;
+            abort();
+        }
+        os_transparent_management.first_swap_epoch_for_dram_controller = false;
+    }
+#endif //TEST_HISTORY_BASED_PAGE_SELECTION
+
+    // swapにかかったオーバーヘッドを追加
+    current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * swap_count_between_epoch;
+    current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * swap_count_between_epoch;
+    current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * swap_count_between_epoch;    
+}
+#endif
 
 template<class T, class T2>
 uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
@@ -1068,7 +1265,12 @@ uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
                     if (buffer[i].read_issue[j] == false)
                     {
                         bool stall       = true;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+                        uint64_t address = (base_address[j] + i) << LOG2_PAGE_SIZE;
+#else
                         uint64_t address = (base_address[j] + i) << LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
+                        
 
                         // Assign the request to the right memory.
                         if (address < memory.max_address)
@@ -1117,8 +1319,11 @@ uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
                         if ((buffer[i].write[j] == false) || (buffer[i].dirty[j] == true))
                         {
                             bool stall       = true;
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+                            uint64_t address = (base_address[j] + i) << LOG2_PAGE_SIZE;
+#else
                             uint64_t address = (base_address[j] + i) << LOG2_BLOCK_SIZE;
-
+#endif // HISTORY_BASED_PAGE_SELECTION
                             // Assign the request to the right memory.
                             if (address < memory.max_address)
                             {
@@ -1222,8 +1427,11 @@ void MEMORY_CONTROLLER<T, T2>::return_swapping_data(ramulator::Request& request)
     }
     break;
     }
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    uint64_t address = request.addr >> LOG2_PAGE_SIZE;
+#else
     uint64_t address = request.addr >> LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
     uint8_t segment_index;
     uint8_t entry_index;
     // Calculate entry index in the fashion of little-endian.
@@ -1268,8 +1476,11 @@ uint8_t MEMORY_CONTROLLER<T, T2>::check_request(request_type& packet, ramulator:
 #else
     address = packet.address;
 #endif
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    address >>= LOG2_PAGE_SIZE;
+#else
     address >>= LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
     uint8_t segment_index;
     uint8_t entry_index;
     // Calculate entry index in the fashion of little-endian.
@@ -1331,8 +1542,11 @@ uint8_t MEMORY_CONTROLLER<T, T2>::check_address(uint64_t address, uint8_t type)
     os_transparent_management.physical_to_hardware_address(address);
 #else
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    address >>= LOG2_PAGE_SIZE;
+#else
     address >>= LOG2_BLOCK_SIZE;
+#endif // HISTORY_BASED_PAGE_SELECTION
     uint8_t segment_index;
     uint8_t entry_index;
     // Calculate entry index in the fashion of little-endian.

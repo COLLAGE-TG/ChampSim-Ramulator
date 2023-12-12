@@ -431,7 +431,6 @@ long O3_CPU::execute_instruction()
         if (rob_it->scheduled == COMPLETED && rob_it->executed == 0 && rob_it->num_reg_dependent == 0 && rob_it->event_cycle <= current_cycle)
         {
             do_execution(*rob_it);
-            --exec_bw;
         }
     }
 

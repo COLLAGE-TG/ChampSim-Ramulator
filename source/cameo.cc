@@ -169,6 +169,8 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
         remapping_request.address_in_fm = champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(fm_remapping_location) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit);
         remapping_request.address_in_sm = champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(remapping_location) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit);
 
+
+
         // Indicate the positions in line location table entry for address_in_fm and address_in_sm.
         remapping_request.fm_location   = fm_location;
         remapping_request.sm_location   = location;
@@ -298,6 +300,11 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
 
         remapping_request.address_in_fm = champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(fm_remapping_location) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit);
         remapping_request.address_in_sm = champsim::replace_bits(line_location_table_index << DATA_MANAGEMENT_OFFSET_BITS, uint64_t(remapping_location) << fast_memory_offset_bit, congruence_group_msb, fast_memory_offset_bit);
+
+        // debug
+        std::cout << "remapping_request.address_in_fm " << remapping_request.address_in_fm << std::endl;
+
+        // debug
 
         // Indicate the positions in line location table entry for address_in_fm and address_in_sm.
         remapping_request.fm_location   = fm_location;
