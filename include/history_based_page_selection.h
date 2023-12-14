@@ -55,7 +55,7 @@
 #define LOCATION_TABLE_ENTRY_MSB              (UINT16_WIDTH - 1) // MSB -> most significant bit
 
 #define REMAPPING_REQUEST_QUEUE_LENGTH        (4096) // 1024/4096
-#define QUEUE_BUSY_DEGREE_THRESHOLD           (0.8f)
+#define QUEUE_BUSY_DEGREE_THRESHOLD           (1.0f) // 0.8fだった。history based page selectionでは全てのスワップを行う
 
 #define INCOMPLETE_READ_REQUEST_QUEUE_LENGTH  (128)
 #define INCOMPLETE_WRITE_REQUEST_QUEUE_LENGTH (128)
@@ -92,12 +92,12 @@ public:
     std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
     std::vector<HOTNESS_WIDTH>& hotness_table; // A hotness bit for every data block, true -> data block is hot, false -> data block is cold.
 
-    std::queue<uint64_t> hotness_address_queue; //hotなアドレスをhotな順に入れる。
+    std::queue<uint64_t> hotness_data_block_address_queue; //hotなアドレスをhotな順に入れる。
 
     /* Remapping request */
     struct RemappingRequest
-    {
-        uint64_t address_in_fm, address_in_sm; // Hardware address in fast and slow memories
+    {   
+        uint64_t address_in_fm, address_in_sm; // Physical address in fast and slow memories
         // REMAPPING_LOCATION_WIDTH fm_location, sm_location;
         // uint8_t size; // Number of cache lines to remap
     };
@@ -142,7 +142,7 @@ public:
 // map<uint64_t physical_page_address, uint64_t hardware_page_address> remapping_table
 // map<uint64_t physical_page_address, uint64_t access_count> page_access_count_table
 // 元のアドレス->physical_page_address、リマッピング後のアドレス->hardware_page_address
-std::vector<uint64_t>& remapping_data_block_table; //index : physical page block address, value : hardware page block address
+std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : physical page block address, value : (hardware page block address, valid_bit)
 
 // #if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
 //     /** @brief
@@ -211,7 +211,7 @@ private:
     bool choose_hotpage_with_sort();
 
     bool add_new_remapping_request_to_queue(float);
-
+    // RemappingRequest choose_swap_page_in_fm();
     void initialize_counter_table(std::vector<COUNTER_WIDTH>& table);
 
     void initialize_hotness_table(std::vector<HOTNESS_WIDTH>& table);
