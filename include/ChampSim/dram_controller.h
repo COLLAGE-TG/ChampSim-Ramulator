@@ -189,8 +189,8 @@ private:
     uint8_t check_request(request_type& packet, ramulator::Request::Type type); // Packet needs to prepare its hardware address.
     uint8_t check_address(uint64_t address, uint8_t type);                      // The address is physical address.
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-    void swap_all_start();
-    // void migration_all_start();
+    // void swap_all_start();
+    void migration_all_start();
 #endif
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
@@ -396,8 +396,8 @@ long MEMORY_CONTROLLER<T, T2>::operate()
     if(swap_start) {
         // swap中は他の操作を行わない
         // swap_all_start();
-        std::thread thread1([this] { swap_all_start(); });
-        // std::thread thread1([this] { migration_all_start(); });
+        // std::thread thread1([this] { swap_all_start(); });
+        std::thread thread1([this] { migration_all_start(); });
         thread1.join();   
     }
 #else
@@ -1059,15 +1059,10 @@ void MEMORY_CONTROLLER<T, T2>::return_data(ramulator::Request& request)
 template<class T, class T2>
 void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
 {
-    swapping_count += active_entry_number * 2;
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-    swapping_traffic_in_bytes += active_entry_number * 2 * PAGE_SIZE;
-#else
-    swapping_traffic_in_bytes += active_entry_number * 2 * BLOCK_SIZE;
-#endif // HISTORY_BASED_PAGE_SELECTION
-
+    swapping_count += active_entry_number;
+    swapping_traffic_in_bytes += active_entry_number * PAGE_SIZE;
     states = SwappingState::Idle;
-#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
     for (auto i = 0; i < SWAPPING_BUFFER_ENTRY_NUMBER; i++)
     {
         buffer[i].finish = false;
@@ -1083,7 +1078,18 @@ void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
             buffer[i].dirty[j]      = false;
         }
     }
-#else
+
+    for (auto i = 0; i < SWAPPING_SEGMENT_NUMBER; i++)
+    {
+        base_address[i] = 0;
+    }
+    active_entry_number = finish_number = 0;
+
+#else //HISTORY_BASED_PAGE_SELECTION
+    swapping_count += active_entry_number * 2;
+    swapping_traffic_in_bytes += active_entry_number * 2 * BLOCK_SIZE;
+
+    states = SwappingState::Idle;
     for (auto i = 0; i < SWAPPING_BUFFER_ENTRY_NUMBER; i++)
     {
         buffer[i].finish = false;
@@ -1098,16 +1104,14 @@ void MEMORY_CONTROLLER<T, T2>::initialize_swapping()
             buffer[i].write[j]      = false;
             buffer[i].dirty[j]      = false;
         }
-    }
-#endif // HISTORY_BASED_PAGE_SELECTION
-
-    
+    }  
 
     for (auto i = 0; i < SWAPPING_SEGMENT_NUMBER; i++)
     {
         base_address[i] = 0;
     }
     active_entry_number = finish_number = 0;
+#endif //HISTORY_BASED_PAGE_SELECTION
 }
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
@@ -1182,21 +1186,12 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 // migrationは全てこの関数で完結させる
-// template<class T, class T2>
-// void MEMORY_CONTROLLER<T, T2>::migration_all_start()
-// {
-
-// }
-// swap操作は全てこの関数で完結させる
 template<class T, class T2>
-void MEMORY_CONTROLLER<T, T2>::swap_all_start()
+void MEMORY_CONTROLLER<T, T2>::migration_all_start()
 {
-    uint64_t swap_count_between_epoch=0;
+    uint64_t migration_count_between_epoch=0;
     // queueの中身全てのremappingを行う
     while(!os_transparent_management.remapping_request_queue.empty()) {
-        // for debug
-        swap_count_between_epoch++;
-        // for debug
         OS_TRANSPARENT_MANAGEMENT::RemappingRequest remapping_request;
         // remapping_request発行
         bool issue = os_transparent_management.issue_remapping_request(remapping_request);
@@ -1206,8 +1201,25 @@ void MEMORY_CONTROLLER<T, T2>::swap_all_start()
             abort();
         }
         start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
+        // migration_count_between_epochを更新
+        // 片方の有効bitがtrueならmigration回数は1回
+        // 両方の有効bitがtrueならmigration回数は2回
+        uint64_t data_address_in_fm = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
+        uint64_t data_address_in_sm = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
+        if(os_transparent_management.remapping_data_block_table.at(data_address_in_fm).second == true && os_transparent_management.remapping_data_block_table.at(data_address_in_sm).second == true) {
+            migration_count_between_epoch += 2;
+            // check
+            if(active_entry_number != 1) {
+                std::cout << "ERROR:wrong active_entry_number" << std::endl;
+            }
+            active_entry_number += 1;
+        }
+        else {
+            migration_count_between_epoch++;
+        }
         // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
         os_transparent_management.finish_remapping_request();
+        
         initialize_swapping();
     }
 
@@ -1234,12 +1246,59 @@ void MEMORY_CONTROLLER<T, T2>::swap_all_start()
     }
 #endif //TEST_HISTORY_BASED_PAGE_SELECTION
 
-    // swapにかかったオーバーヘッドを追加
-    current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * swap_count_between_epoch;
-    current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * swap_count_between_epoch;
-    current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * swap_count_between_epoch;    
+    // migrationにかかったオーバーヘッドを追加
+    current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_epoch;
+    current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_epoch;
+    current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_epoch;    
 }
-#endif
+// // swap操作は全てこの関数で完結させる
+// template<class T, class T2>
+// void MEMORY_CONTROLLER<T, T2>::swap_all_start()
+// {
+//     uint64_t swap_count_between_epoch=0;
+//     // queueの中身全てのremappingを行う
+//     while(!os_transparent_management.remapping_request_queue.empty()) {
+//         // for debug
+//         swap_count_between_epoch++;
+//         // for debug
+//         OS_TRANSPARENT_MANAGEMENT::RemappingRequest remapping_request;
+//         // remapping_request発行
+//         bool issue = os_transparent_management.issue_remapping_request(remapping_request);
+//         // チェック
+//         if (issue == false) {
+//             std::cout << "ERROR : The remapping request has no content." << std::endl;
+//             abort();
+//         }
+//         start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
+//         // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
+//         os_transparent_management.finish_remapping_request();
+//         initialize_swapping();
+//     }
+
+// #if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ
+//     // 最初のエポックだけ出力
+//     if(os_transparent_management.first_swap_epoch_for_dram_controller) {
+//         std::cout << "make check_remapping_data_block_table.txt" << std::endl;
+//         std::ofstream output_debug_File("check_remapping_data_block_table.txt", std::ios::trunc);
+//         // ファイルが正しく開かれたかチェック
+//         if (output_debug_File.is_open()) {
+//             output_debug_File << "---------------remapping_data_block_table---------------" << std::endl;
+//             output_debug_File << "physical address : hardware address" << std::endl;
+//             // ここから下は不安
+//             for (uint64_t i = 0; i < os_transparent_management.remapping_data_block_table.size(); i++) {
+//                 output_debug_File << i << " : " << os_transparent_management.remapping_data_block_table.at(i) << std::endl;
+//             }
+//             output_debug_File.close();
+//         }
+//         else {
+//             std::cout << "output_debug_File cannot open" << std::endl;
+//             abort();
+//         }
+//         os_transparent_management.first_swap_epoch_for_dram_controller = false;
+//     }
+// #endif //TEST_HISTORY_BASED_PAGE_SELECTION
+// }
+#endif //HISTORY_BASED_PAGE_SELECTION
 
 template<class T, class T2>
 uint8_t MEMORY_CONTROLLER<T, T2>::operate_swapping()
