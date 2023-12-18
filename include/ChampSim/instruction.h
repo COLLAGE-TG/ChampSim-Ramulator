@@ -75,10 +75,11 @@ struct ooo_model_instr
 
     // taiga added
     // 関数の開始と終了、およびその名前を格納
-    // bool is_rtn_start;
+#if (GC_TRACE == ENABLE)
     unsigned char is_rtn_start;
     unsigned char is_rtn_end;
     char function_name[256]; //256字以上の関数名は格納できません
+#endif
     // taiga added
 
 private:

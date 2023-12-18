@@ -116,7 +116,7 @@ void WriteToSet(T* begin, T* end, UINT32 r)
 /* ===================================================================== */
 // Print routine function
 /* ===================================================================== */
-
+#if (GC_TRACE == ENABLE)
 VOID Print_rtn_start(CHAR* name)
 {
   // std::cout << "====================" << "rtn_name =  " << name << "====================" << std::endl;
@@ -148,7 +148,7 @@ VOID Image(IMG img, VOID* v)
     RTN_Close(GC_start_rtn);
   }
 }
-
+#endif // GC_TRACE
 
 /* ===================================================================== */
 // Instrumentation callbacks
@@ -229,7 +229,9 @@ int main(int argc, char* argv[])
 
   // === for print routine name ===
   // Initialize symbol table code, needed for rtn instrumentation
+#if (GC_TRACE == ENABLE)
   PIN_InitSymbols();
+#endif //GC_TRACE
   // === for print routine name ===
 
   // Initialize PIN library. Print help message if -h(elp) is specified
@@ -244,8 +246,10 @@ int main(int argc, char* argv[])
     exit(1);
   }
 
+#if (GC_TRACE == ENABLE)
   // プリントファンクション
   IMG_AddInstrumentFunction(Image, 0);
+#endif //# GC_TRACE
 
   // Register function to be called to instrument instructions
   INS_AddInstrumentFunction(Instruction, 0);

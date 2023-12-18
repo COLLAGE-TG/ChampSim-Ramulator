@@ -21,6 +21,8 @@
 #define MEMORY_USE_OS_TRANSPARENT_MANAGEMENT (ENABLE)  // Whether memory controller uses OS-transparent management designs to simulate the memory system instead of static (no-migration) methods
 #define CPU_USE_MULTIPLE_CORES               (DISABLE) // Whether CPU uses multiple cores to run simulation (go to include/ChampSim/champsim_constants.h to check related parameters)
 
+/** Configuration for GC trace */
+#define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 /** Configuration for hybrid memory systems */
 #if (MEMORY_USE_HYBRID == ENABLE)
 #define NUMBER_OF_MEMORIES (2U) // We use two memories for hybrid memory system.
