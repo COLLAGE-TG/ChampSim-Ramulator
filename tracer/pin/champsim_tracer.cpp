@@ -32,6 +32,7 @@ using trace_instr_format_t = input_instr;
 
 // #define GC_START "signal_gc_start"
 #define GC_START "GC_stopped_mark"
+#define GC_MARK_END "GC_apply_to_all_blocks_for_reclaim_block"
 
 /* ================================================================== */
 // Global variables 
@@ -120,7 +121,7 @@ void WriteToSet(T* begin, T* end, UINT32 r)
 VOID Print_rtn_start(CHAR* name)
 {
   // std::cout << "====================" << "rtn_name =  " << name << "====================" << std::endl;
-  curr_instr.is_rtn_start = '1';
+  curr_instr.is_gc_rtn_start = '1';
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
 }
@@ -128,8 +129,18 @@ VOID Print_rtn_start(CHAR* name)
 VOID Print_rtn_end(CHAR* name)
 {
   // std::cout << "====================" << " end " << name << "====================" << std::endl;
-  curr_instr.is_rtn_end = '1';
-  // std::cout << "==================curr_instr.is_rtn_end " << curr_instr.is_rtn_end << std::endl;
+  curr_instr.is_gc_rtn_end = '1';
+  // std::cout << "==================curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << std::endl;
+  strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
+  curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
+  // std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
+}
+
+VOID Print_rtn_mark_end(CHAR* name)
+{
+  // std::cout << "====================" << " end " << name << "====================" << std::endl;
+  curr_instr.is_mark_end = '1';
+  // std::cout << "==================curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
   strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
   // std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
@@ -144,7 +155,8 @@ VOID Image(IMG img, VOID* v)
     RTN_Open(GC_start_rtn);
     RTN_InsertCall(GC_start_rtn, IPOINT_BEFORE, (AFUNPTR)Print_rtn_start, IARG_ADDRINT, GC_START,
                    IARG_END);
-    // RTN_InsertCall(GC_start_rtn, IPOINT_AFTER, (AFUNPTR)Print_rtn_end, IARG_ADDRINT, GC_START, IARG_END);
+    RTN_InsertCall(GC_start_rtn, IPOINT_AFTER, (AFUNPTR)Print_rtn_end, IARG_ADDRINT, GC_START, IARG_END);
+    RTN_InsertCall(GC_start_rtn, IPOINT_AFTER, (AFUNPTR)Print_rtn_mark_end, IARG_ADDRINT, GC_MARK_END, IARG_END);
     RTN_Close(GC_start_rtn);
   }
 }

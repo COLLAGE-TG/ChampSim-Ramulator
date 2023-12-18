@@ -50,8 +50,9 @@ struct input_instr
     // taiga added
     // 関数の開始と終了、およびその名前を格納
 #if (GC_TRACE == ENABLE)
-    unsigned char is_rtn_start;
-    unsigned char is_rtn_end;
+    unsigned char is_gc_rtn_start;
+    unsigned char is_gc_rtn_end;
+    unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
     char function_name[256]; //256字以上の関数名は格納できません
 #endif
 };
@@ -76,8 +77,9 @@ struct cloudsuite_instr
     // taiga added
     // 関数の開始と終了、およびその名前を格納
 #if (GC_TRACE == ENABLE)
-    unsigned char is_rtn_start;
-    unsigned char is_rtn_end;
+    unsigned char is_gc_rtn_start;
+    unsigned char is_gc_rtn_end;
+    unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
     char function_name[256]; //256字以上の関数名は格納できません
 #endif
 };
