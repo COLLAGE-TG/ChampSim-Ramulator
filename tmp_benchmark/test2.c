@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <gc/gc.h>
+#include <gconv.h>/
 #include "/home/funkytaiga/tools/gc-8.2.2/include/for_champsim.h"
 #include <sys/time.h>
 

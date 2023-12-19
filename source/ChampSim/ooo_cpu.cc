@@ -458,6 +458,17 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         fmt::print("[ROB] {} instr_id: {} event_cycle: {}\n", __func__, rob_entry.instr_id, rob_entry.event_cycle);
 #endif // USE_VCPKG
     }
+// taiga added
+#if (GC_TRACE == ENABLE)
+    if(rob_entry.is_mark_end == 1) {
+        // degug
+        std::cout << "is_mark_end == 1" << std::endl;
+        // degug
+    }
+#endif // GC_TRACE
+// taiga added
+
+
 }
 
 void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
