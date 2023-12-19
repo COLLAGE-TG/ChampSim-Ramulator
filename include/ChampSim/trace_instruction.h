@@ -53,6 +53,7 @@ struct input_instr
     unsigned char is_gc_rtn_start;
     unsigned char is_gc_rtn_end;
     unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
+    unsigned char gc_minor_or_full; //minor = 1, full = 2
     char function_name[256]; //256字以上の関数名は格納できません
 #endif
 };
@@ -80,6 +81,7 @@ struct cloudsuite_instr
     unsigned char is_gc_rtn_start;
     unsigned char is_gc_rtn_end;
     unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
+    unsigned char gc_minor_or_full; //minor = 1, full = 2
     char function_name[256]; //256字以上の関数名は格納できません
 #endif
 };

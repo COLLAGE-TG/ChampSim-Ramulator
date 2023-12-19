@@ -23,6 +23,7 @@
 
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
+
 /** Configuration for hybrid memory systems */
 #if (MEMORY_USE_HYBRID == ENABLE)
 #define NUMBER_OF_MEMORIES (2U) // We use two memories for hybrid memory system.

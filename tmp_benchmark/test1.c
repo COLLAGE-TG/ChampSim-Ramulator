@@ -1,10 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <gc/gc.h>
+#include <gc.h>
+#include "/home/funkytaiga/tools/gc-8.2.2/include/for_champsim.h"
 #include <sys/time.h>
 
 int main(void)
 {
+
+  FILE *file = fopen(marked_bit_file_path, "w");
+  printf("marked_bit_file_path = %s\n", marked_bit_file_path);
+  if (file == NULL) {
+    fprintf(stderr, "ファイル %s を開けませんでした(test2.c)\n", marked_bit_file_path);
+    return 1;
+  }
+  fclose(file);
   GC_INIT();
   GC_enable_incremental(); //小さいGCを多く行う。世代別とはちがう？
   GC_start_performance_measurement();
