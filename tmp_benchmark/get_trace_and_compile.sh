@@ -11,7 +11,7 @@ FILE_NAME="${SAMPLE_FILENAME}_${WARMUP}_${SAMPLE_INST}.champsim"
 GC_ROOT=/home/funkytaiga/tools/gc-8.2.2/
 
 if [ $DO_GC -eq 1 ]; then
-  gcc -I${GC_ROOT}/include -L${GC_ROOT}/lib -Wl,-R${GC_ROOT}/lib ${1} -lgc
+  gcc -I${GC_ROOT}/include -L${GC_ROOT}/.libs -Wl,-R${GC_ROOT}/lib ${1} -lgc
 elif [ $DO_GC -eq 0 ]; then
   gcc ${1}
 else
