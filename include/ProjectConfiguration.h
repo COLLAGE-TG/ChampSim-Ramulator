@@ -222,6 +222,8 @@ private:
 extern MEMORY_TRACE output_memorytrace;
 extern SIMULATOR_STATISTICS output_statistics;
 
+static std::string output_file_path_statistic = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/statistics/";
+
 /* Variable */
 
 /* Function */

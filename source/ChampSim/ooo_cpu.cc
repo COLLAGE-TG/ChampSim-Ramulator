@@ -34,6 +34,7 @@
 #include "ChampSim/deadlock.h"
 #include "ChampSim/instruction.h"
 #include "ChampSim/util/span.h"
+#include "/home/funkytaiga/tools/gc-8.2.2/include/for_champsim.h"
 
 std::chrono::seconds elapsed_time();
 
@@ -460,11 +461,31 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     }
 // taiga added
 #if (GC_TRACE == ENABLE)
+    // debug
     if(rob_entry.is_mark_end == 1) {
         // degug
         std::cout << "is_mark_end == 1" << std::endl;
         // degug
     }
+    // debug
+    if(rob_entry.is_gc_rtn_start == 1) {
+        // degug
+        std::cout << "is_gc_rtn_start == 1" << std::endl;
+        // degug
+        // static long prev_gc_start = 0; //前のGC_STARTの位置を覚えている　この必要あるか？
+        // FILE *file;
+        // file = fopen(marked_bit_file_path, "r");
+        // char tmp_buf[100]; //読み込んだデータを一行分保存
+        // // ファイルから一行ずつ読み込む
+        // while (fgets(tmp_buf, sizeof(tmp_buf), file) != NULL) {
+        //     printf("読み込んだ行: %s", tmp_buf);
+        //     // GC_START,END,FULLによって場合分け
+        // }
+
+
+        // fclose(file);
+    }
+
 #endif // GC_TRACE
 // taiga added
 

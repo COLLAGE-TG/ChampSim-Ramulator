@@ -14,6 +14,7 @@ int main(void)
     return 1;
   }
   fclose(file);
+  
   GC_INIT();
   GC_enable_incremental(); //小さいGCを多く行う。世代別とはちがう？
   GC_start_performance_measurement();

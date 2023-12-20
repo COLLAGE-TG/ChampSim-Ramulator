@@ -54,6 +54,11 @@ void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t numbe
     // append file_extension to benchmark_names.
     benchmark_names += file_extension.c_str();
 
+    // taiga added
+    output_file_path_statistic += benchmark_names.c_str();
+    benchmark_names = output_file_path_statistic;
+    // taiga added
+
     file_handler = fopen(benchmark_names.c_str(), "w");
     file_name    = (char*) malloc(benchmark_names.size() + 1);
     strcpy(file_name, benchmark_names.c_str());

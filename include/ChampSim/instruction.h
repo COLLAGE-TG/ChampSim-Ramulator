@@ -78,6 +78,7 @@ struct ooo_model_instr
 #if (GC_TRACE == ENABLE)
     unsigned char is_gc_rtn_start;
     unsigned char is_gc_rtn_end;
+    unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
     char function_name[256]; //256字以上の関数名は格納できません
 #endif //GC_TRACE
     // taiga added
@@ -85,7 +86,7 @@ struct ooo_model_instr
 private:
     template<typename T>
 #if (GC_TRACE == ENABLE)
-    ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid): ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid), is_gc_rtn_start(instr.is_gc_rtn_start), is_gc_rtn_end(instr.is_gc_rtn_end)
+    ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid): ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid), is_gc_rtn_start(instr.is_gc_rtn_start), is_gc_rtn_end(instr.is_gc_rtn_end), is_mark_end(instr.is_mark_end)
 #else //GC_TRACE
     ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid): ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid)
 #endif //GC_TRACE
