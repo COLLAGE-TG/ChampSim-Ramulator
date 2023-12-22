@@ -79,7 +79,7 @@ struct ooo_model_instr
     bool is_gc_rtn_start;
     bool is_gc_rtn_end;
     bool is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
-    char function_name[256]; //256字以上の関数名は格納できません
+    // char function_name[256]; //256字以上の関数名は格納できません
 #endif //GC_TRACE
     // taiga added
 
@@ -102,7 +102,7 @@ private:
         std::remove_copy(std::begin(instr.source_memory), std::end(instr.source_memory), std::back_inserter(this->source_memory), 0);
 
         // taiga added
-        strcpy(function_name, instr.function_name);
+        // strcpy(function_name, instr.function_name);
 
         bool writes_sp   = std::count(std::begin(destination_registers), std::end(destination_registers), champsim::REG_STACK_POINTER);
         bool writes_ip   = std::count(std::begin(destination_registers), std::end(destination_registers), champsim::REG_INSTRUCTION_POINTER);

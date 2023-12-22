@@ -185,8 +185,8 @@ VOID Print_rtn_start(CHAR* name)
   std::cout << "====================" << "rtn_name =  " << name << "====================" << std::endl;
   curr_instr.is_gc_rtn_start = 1;
   std::cout << "==================curr_instr.is_gc_rtn_start " << curr_instr.is_gc_rtn_start << std::endl;
-  strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
-  curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
+  // strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
+  // curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
 
   // curr_instr check
   // std::cout << "curr_instr.ip : " << curr_instr.ip << std::endl;
@@ -199,8 +199,8 @@ VOID Print_rtn_end(CHAR* name)
   std::cout << "====================" << " end " << name << "====================" << std::endl;
   curr_instr.is_gc_rtn_end = 1;
   std::cout << "==================curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << "============" << std::endl;
-  strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
-  curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
+  // strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
+  // curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
   // std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
 }
 
@@ -209,8 +209,8 @@ VOID Print_rtn_mark_end(CHAR* name)
   // std::cout << "====================" << " end " << name << "====================" << std::endl;
   curr_instr.is_mark_end = 1;
   // std::cout << "==================curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
-  strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
-  curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
+  // strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
+  // curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
   // std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
 }
 
