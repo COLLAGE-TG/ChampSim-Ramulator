@@ -76,9 +76,9 @@ struct ooo_model_instr
     // taiga added
     // 関数の開始と終了、およびその名前を格納
 #if (GC_TRACE == ENABLE)
-    unsigned char is_gc_rtn_start;
-    unsigned char is_gc_rtn_end;
-    unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
+    bool is_gc_rtn_start;
+    bool is_gc_rtn_end;
+    bool is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
     char function_name[256]; //256字以上の関数名は格納できません
 #endif //GC_TRACE
     // taiga added
@@ -91,6 +91,11 @@ private:
     ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid): ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid)
 #endif //GC_TRACE
     {
+        // taiga debug
+        if(instr.is_gc_rtn_start == true) {
+            int check = 1;
+        }
+        // taiga debug
         std::remove_copy(std::begin(instr.destination_registers), std::end(instr.destination_registers), std::back_inserter(this->destination_registers), 0);
         std::remove_copy(std::begin(instr.source_registers), std::end(instr.source_registers), std::back_inserter(this->source_registers), 0);
         std::remove_copy(std::begin(instr.destination_memory), std::end(instr.destination_memory), std::back_inserter(this->destination_memory), 0);

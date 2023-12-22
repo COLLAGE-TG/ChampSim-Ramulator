@@ -22,6 +22,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <iostream>
 
 #include "ChampSim/instruction.h"
 #include "ChampSim/util/detect.h"
@@ -132,6 +133,27 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
         auto end   = std::next(begin, bytes_read / sizeof(T));
         std::transform(begin, end, std::back_inserter(instr_buffer), [cpu = this->cpu](T t)
             { return ooo_model_instr {cpu, t}; });
+        
+        // taiga debug
+        for(int i=0; i < trace_read_buf.size(); i++) {
+            if(trace_read_buf.at(i).is_gc_rtn_start==1) {
+                std::cout << "============trace_read_buf has is_gc_rtn_start=1============" << std::endl;
+            }
+            if(instr_buffer.at(i).is_gc_rtn_start==1) {
+                std::cout << "============instr_buffer has is_gc_rtn_start=1============" << std::endl;
+            }
+        }
+        // for(auto tmp_instr : trace_read_buf) {
+        //     if(tmp_instr.is_gc_rtn_start==1) {
+        //         std::cout << "============trace_read_buf has is_gc_rtn_start=1============" << std::endl;
+        //     }
+        // }
+        // for(auto tmp_instr : instr_buffer) {
+        //     if(tmp_instr.is_gc_rtn_start==1) {
+        //         std::cout << "============instr_buffer has is_gc_rtn_start=1============" << std::endl;
+        //     }
+        // }
+        // taiga debug
 
         // Set branch targets
         set_branch_targets(std::begin(instr_buffer), std::end(instr_buffer));

@@ -91,8 +91,58 @@ phase_stats do_phase(phase_info phase, environment& env, std::vector<tracereader
         for (O3_CPU& cpu : env.cpu_view())
         {
             auto& trace = traces.at(trace_index.at(cpu.cpu));
-            for (auto pkt_count = cpu.IN_QUEUE_SIZE - static_cast<long>(std::size(cpu.input_queue)); ! trace.eof() && pkt_count > 0; --pkt_count)
-                cpu.input_queue.push_back(trace());
+            for (auto pkt_count = cpu.IN_QUEUE_SIZE - static_cast<long>(std::size(cpu.input_queue)); ! trace.eof() && pkt_count > 0; --pkt_count) {
+#if (GC_TRACE==ENABLE) 
+//              // taiga debug
+                // if(trace().is_branch == 1) {
+                //     std::cout << "===================================" << std::endl;
+                //     std::cout << "champsim.cc : is_branch == 1" << std::endl;
+                // }
+                // static long trace_count_for_debug = 0;
+                // std::cout << "trace_count : " << trace_count_for_debug << std::endl;
+                auto tmp_trace = trace();
+                // trace_count_for_debug++;
+                // std::cout << "============GC_TRACE===========" << std::endl;
+                // std::cout << "======================== " << tmp_trace.ip << " ======================== " << std::endl;
+                // if(tmp_trace.is_gc_rtn_start != 0) {
+                //     std::cout << "===================================" << std::endl;
+                //     std::cout << "champsim.cc : is_gc_rtn_start = " << tmp_trace.is_gc_rtn_start << std::endl;
+                // }
+                // if(tmp_trace.is_mark_end == 1) {
+                //     std::cout << "champsim.cc : is_mark_end == 1" << std::endl;
+                // }
+                static int print_count_limit = 0;
+                if(print_count_limit < 100) {
+                    std::cout << "==============" << std::endl;
+                    std::cout << "tmp_trace.ip " << tmp_trace.ip << std::endl;
+                    std::cout << "tmp_trace.branch_taken " << tmp_trace.branch_taken << std::endl;
+                    // std::ostream_iteratorを使用してstd::vectorを標準出力に出力
+                    std::cout << "tmp_trace.source_registers ";
+                    std::copy(tmp_trace.source_registers.begin(), tmp_trace.source_registers.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                    std::cout << std::endl;
+                    std::cout << "tmp_trace.destination_memory ";
+                    std::copy(tmp_trace.destination_memory.begin(), tmp_trace.destination_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                    std::cout << std::endl;
+                    std::cout << "tmp_trace.destination_registers ";
+                    std::copy(tmp_trace.destination_registers.begin(), tmp_trace.destination_registers.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                    std::cout << std::endl;
+                    std::cout << "tmp_trace.source_memory ";
+                    std::copy(tmp_trace.source_memory.begin(), tmp_trace.source_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                    std::cout << std::endl;
+                    std::cout << "tmp_trace.source_memory ";
+                    std::copy(tmp_trace.source_memory.begin(), tmp_trace.source_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                    std::cout << std::endl;
+                    std::cout << "tmp_trace.is_gc_rtn_start " << tmp_trace.is_gc_rtn_start << std::endl;
+                    std::cout << "tmp_trace.is_gc_rtn_end " << tmp_trace.is_gc_rtn_end << std::endl;
+                    std::cout << "tmp_trace.is_mark_end " << tmp_trace.is_mark_end << std::endl;
+                    std::cout << "==============" << std::endl;
+                }
+//              // taiga debug
+#endif // GC_TRACE
+                cpu.input_queue.push_back(tmp_trace);
+                // cpu.input_queue.push_back(trace());
+            }
+                
 
             // If any trace reaches EOF, terminate all phases
             if (trace.eof())

@@ -5,6 +5,10 @@ tracer/pin/obj-intel64/
 vcpkg_installed/
 dpc3_traces/
 core
+tmp_trace/
+tmp_gc_marked_pages_files
+source/ChampSim/branch
+source/ChampSim/btb/basic_btb
 
 # ignore the specified type of files (.stats/.statistics/.trace/Dockerfile/.sh)
 /*.stats
@@ -12,8 +16,10 @@ core
 /*.trace
 /Dockerfile
 /*.sh
-
+/*.o.default
+/*.o.opt
 **/*.o
+/a.out
 
 # Common git commands are listed below, the main branch is the branch pointed by the HEAD pointer.
 
