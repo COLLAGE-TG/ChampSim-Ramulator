@@ -127,22 +127,58 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
 
         // Transform bytes into trace format instructions
         std::memcpy(std::data(trace_read_buf), std::data(raw_buf), bytes_read);
+        // taiga debug
+        // trace_read_buf.at(0).ip = 100000000;
+        // trace_read_buf.at(0).is_branch = 1;
+        // trace_read_buf.at(0).destination_registers[0] = '2';
+        // trace_read_buf.at(0).source_registers[0] = '3';
+        // trace_read_buf.at(0).destination_memory[0] = '1';
+        // trace_read_buf.at(0).source_memory[0] = '4';
+
+        // trace_read_buf.at(0).is_gc_rtn_start = 1;
+        // trace_read_buf.at(0).is_gc_rtn_end = 1;
+        // trace_read_buf.at(0).is_mark_end = 0;
+
+        // trace_read_buf.at(1).ip = 100000000;
+        // trace_read_buf.at(0).destination_registers[0] = '4';
+        // trace_read_buf.at(0).source_registers[0] = '6';
+        // trace_read_buf.at(0).destination_memory[0] = '7';
+        // trace_read_buf.at(0).source_memory[0] = '9';
+
+        // trace_read_buf.at(1).is_gc_rtn_start = 1;
+        // trace_read_buf.at(1).is_gc_rtn_end = 0;
+        // trace_read_buf.at(1).is_mark_end = 0;
+        // taiga debug
+
 
         // Inflate trace format into core model instructions
         auto begin = std::begin(trace_read_buf);
         auto end   = std::next(begin, bytes_read / sizeof(T));
+        // auto end = std::next(begin, 2);
         std::transform(begin, end, std::back_inserter(instr_buffer), [cpu = this->cpu](T t)
             { return ooo_model_instr {cpu, t}; });
         
         // taiga debug
-        for(int i=0; i < trace_read_buf.size(); i++) {
+        static int debug_inst_flag = 1;
+        if(debug_inst_flag == 1) {
+            for (int i = 0; i < 10; i++) {
+                instr_buffer.at(i).is_gc_rtn_start = 1;
+            }
+            debug_inst_flag = 0;
+        }
+        
+        for(long unsigned int i=0; i < trace_read_buf.size(); i++) {
             if(trace_read_buf.at(i).is_gc_rtn_start==1) {
                 std::cout << "============trace_read_buf has is_gc_rtn_start=1============" << std::endl;
             }
+            
+        }
+        for(long unsigned int i=0; i < instr_buffer.size(); i++) {
             if(instr_buffer.at(i).is_gc_rtn_start==1) {
                 std::cout << "============instr_buffer has is_gc_rtn_start=1============" << std::endl;
             }
         }
+        
         // for(auto tmp_instr : trace_read_buf) {
         //     if(tmp_instr.is_gc_rtn_start==1) {
         //         std::cout << "============trace_read_buf has is_gc_rtn_start=1============" << std::endl;

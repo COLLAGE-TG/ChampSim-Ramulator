@@ -470,7 +470,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     // debug
     if(rob_entry.is_gc_rtn_start == 1) {
         // degug
-        std::cout << "is_gc_rtn_start == 1" << std::endl;
+        std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
         // degug
         // static long prev_gc_start = 0; //前のGC_STARTの位置を覚えている　この必要あるか？
         // FILE *file;

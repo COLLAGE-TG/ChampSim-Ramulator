@@ -100,7 +100,7 @@ phase_stats do_phase(phase_info phase, environment& env, std::vector<tracereader
                 // }
                 // static long trace_count_for_debug = 0;
                 // std::cout << "trace_count : " << trace_count_for_debug << std::endl;
-                auto tmp_trace = trace();
+                // auto tmp_trace = trace();
                 // trace_count_for_debug++;
                 // std::cout << "============GC_TRACE===========" << std::endl;
                 // std::cout << "======================== " << tmp_trace.ip << " ======================== " << std::endl;
@@ -111,36 +111,36 @@ phase_stats do_phase(phase_info phase, environment& env, std::vector<tracereader
                 // if(tmp_trace.is_mark_end == 1) {
                 //     std::cout << "champsim.cc : is_mark_end == 1" << std::endl;
                 // }
-                static int print_count_limit = 0;
-                if(print_count_limit < 100) {
-                    std::cout << "==============" << std::endl;
-                    std::cout << "tmp_trace.ip " << tmp_trace.ip << std::endl;
-                    std::cout << "tmp_trace.branch_taken " << tmp_trace.branch_taken << std::endl;
-                    // std::ostream_iteratorを使用してstd::vectorを標準出力に出力
-                    std::cout << "tmp_trace.source_registers ";
-                    std::copy(tmp_trace.source_registers.begin(), tmp_trace.source_registers.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
-                    std::cout << std::endl;
-                    std::cout << "tmp_trace.destination_memory ";
-                    std::copy(tmp_trace.destination_memory.begin(), tmp_trace.destination_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
-                    std::cout << std::endl;
-                    std::cout << "tmp_trace.destination_registers ";
-                    std::copy(tmp_trace.destination_registers.begin(), tmp_trace.destination_registers.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
-                    std::cout << std::endl;
-                    std::cout << "tmp_trace.source_memory ";
-                    std::copy(tmp_trace.source_memory.begin(), tmp_trace.source_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
-                    std::cout << std::endl;
-                    std::cout << "tmp_trace.source_memory ";
-                    std::copy(tmp_trace.source_memory.begin(), tmp_trace.source_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
-                    std::cout << std::endl;
-                    std::cout << "tmp_trace.is_gc_rtn_start " << tmp_trace.is_gc_rtn_start << std::endl;
-                    std::cout << "tmp_trace.is_gc_rtn_end " << tmp_trace.is_gc_rtn_end << std::endl;
-                    std::cout << "tmp_trace.is_mark_end " << tmp_trace.is_mark_end << std::endl;
-                    std::cout << "==============" << std::endl;
-                }
+                // static int print_count_limit = 0;
+                // if(print_count_limit < 100) {
+                //     std::cout << "==============" << std::endl;
+                //     std::cout << "tmp_trace.ip " << tmp_trace.ip << std::endl;
+                //     std::cout << "tmp_trace.branch_taken " << tmp_trace.branch_taken << std::endl;
+                //     // std::ostream_iteratorを使用してstd::vectorを標準出力に出力
+                //     std::cout << "tmp_trace.source_registers ";
+                //     std::copy(tmp_trace.source_registers.begin(), tmp_trace.source_registers.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                //     std::cout << std::endl;
+                //     std::cout << "tmp_trace.destination_memory ";
+                //     std::copy(tmp_trace.destination_memory.begin(), tmp_trace.destination_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                //     std::cout << std::endl;
+                //     std::cout << "tmp_trace.destination_registers ";
+                //     std::copy(tmp_trace.destination_registers.begin(), tmp_trace.destination_registers.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                //     std::cout << std::endl;
+                //     std::cout << "tmp_trace.source_memory ";
+                //     std::copy(tmp_trace.source_memory.begin(), tmp_trace.source_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                //     std::cout << std::endl;
+                //     std::cout << "tmp_trace.source_memory ";
+                //     std::copy(tmp_trace.source_memory.begin(), tmp_trace.source_memory.end(), std::ostream_iterator<unsigned char>(std::cout, " "));
+                //     std::cout << std::endl;
+                //     std::cout << "tmp_trace.is_gc_rtn_start " << tmp_trace.is_gc_rtn_start << std::endl;
+                //     std::cout << "tmp_trace.is_gc_rtn_end " << tmp_trace.is_gc_rtn_end << std::endl;
+                //     std::cout << "tmp_trace.is_mark_end " << tmp_trace.is_mark_end << std::endl;
+                //     std::cout << "==============" << std::endl;
+                // }
 //              // taiga debug
 #endif // GC_TRACE
-                cpu.input_queue.push_back(tmp_trace);
-                // cpu.input_queue.push_back(trace());
+                // cpu.input_queue.push_back(tmp_trace);
+                cpu.input_queue.push_back(trace());
             }
                 
 
