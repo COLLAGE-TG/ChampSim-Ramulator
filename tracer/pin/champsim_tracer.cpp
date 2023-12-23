@@ -81,10 +81,14 @@ INT32 Usage()
 
 void ResetCurrentInstruction(VOID* ip)
 {
-  curr_instr = {};
+  // curr_instr = {};
   curr_instr.ip = (unsigned long long int)ip;
 }
-
+// taiga added
+void ClearCurrentInstruction() {
+  curr_instr = {};
+}
+// taiga added
 BOOL ShouldWrite()
 {
   ++instrCount;
@@ -98,21 +102,32 @@ void WriteCurrentInstruction()
   outfile.write(buf, sizeof(trace_instr_format_t)); //curr_instrのデータをbufに渡す。curr_instrには.ip, .is_branchなどの値がある。
 
   // taiga debug
-  static int count_print_limit = 0;
-  if(count_print_limit < 100) {
-    std::cout << "==============" << std::endl;
-    std::cout << "curr_instr.ip " << curr_instr.ip << std::endl;
-    std::cout << "curr_instr.branch_taken " << curr_instr.branch_taken << std::endl;
-    std::cout << "curr_instr.destination_memory " << curr_instr.destination_memory << std::endl;
-    std::cout << "curr_instr.destination_registers " << curr_instr.destination_registers << std::endl;
-    std::cout << "curr_instr.source_memory " << curr_instr.source_memory << std::endl;
-    std::cout << "curr_instr.source_registers " << curr_instr.source_registers << std::endl;
-    std::cout << "curr_instr.is_gc_rtn_start " << curr_instr.is_gc_rtn_start << std::endl;
-    std::cout << "curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << std::endl;
-    std::cout << "curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
-    std::cout << "==============" << std::endl;
+  // static int count_print_limit = 0;
+  // if(count_print_limit < 1000000) {
+  //   std::cout << "==============" << std::endl;
+  //   std::cout << "curr_instr.ip " << curr_instr.ip << std::endl;
+  //   std::cout << "curr_instr.is_branch " << curr_instr.is_branch << std::endl;
+  //   std::cout << "curr_instr.branch_taken " << curr_instr.branch_taken << std::endl;
+  //   std::cout << "curr_instr.destination_memory " << curr_instr.destination_memory << std::endl;
+  //   std::cout << "curr_instr.destination_registers " << curr_instr.destination_registers << std::endl;
+  //   std::cout << "curr_instr.source_memory " << curr_instr.source_memory << std::endl;
+  //   std::cout << "curr_instr.source_registers " << curr_instr.source_registers << std::endl;
+  //   std::cout << "curr_instr.is_gc_rtn_start " << curr_instr.is_gc_rtn_start << std::endl;
+  //   std::cout << "curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << std::endl;
+  //   std::cout << "curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
+  //   std::cout << "==============" << std::endl;
 
-    count_print_limit++;
+  //   count_print_limit++;
+  // }
+
+  if(curr_instr.is_branch==1) {
+      std::cout << "***curr_instr.is_branch==1***" << std::endl;
+  }
+  // if(curr_instr.is_gc_rtn_start==0) {
+  //   std::cout << "---curr_instr.is_gc_rtn_start==0---" << std::endl;
+  // }
+  if(curr_instr.is_gc_rtn_start==1) {
+    std::cout << "***curr_instr.is_gc_rtn_start==1***" << std::endl;
   }
   
   // taiga debug
@@ -120,7 +135,6 @@ void WriteCurrentInstruction()
 
 void BranchOrNot(UINT32 taken)
 {
-
   curr_instr.is_branch = 1;
   curr_instr.branch_taken = taken;
 }
@@ -132,49 +146,6 @@ void WriteToSet(T* begin, T* end, UINT32 r)
   auto found_reg = std::find(begin, set_end, r); // check to see if this register is already in the list
   *found_reg = r; //すでに存在しているレジスタならそのまま、存在していなければ末尾に追加。
 }
-
-// taiga debug
-void Print_curr_instr() {
-  // std::cout << "==============" << std::endl;
-  // std::cout << "curr_instr.ip " << curr_instr.ip << std::endl;
-  // std::cout << "curr_instr.branch_taken " << curr_instr.branch_taken << std::endl;
-  // std::cout << "curr_instr.destination_memory " << curr_instr.destination_memory << std::endl;
-  // std::cout << "curr_instr.destination_registers " << curr_instr.destination_registers << std::endl;
-  // std::cout << "curr_instr.source_memory " << curr_instr.source_memory << std::endl;
-  // std::cout << "curr_instr.source_registers " << curr_instr.source_registers << std::endl;
-  // std::cout << "curr_instr.is_gc_rtn_start " << curr_instr.is_gc_rtn_start << std::endl;
-  // std::cout << "curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << std::endl;
-  // std::cout << "curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
-  // std::cout << "==============" << std::endl;
-  if(curr_instr.is_gc_rtn_start == '1') {
-    std::cout << "+++++++++++++++++++++++++++++++" << std::endl;
-    std::cout << "curr_instr.is_gc_rtn_start == '1'" << std::endl;
-  }
-  // if(curr_instr.is_branch == 1) {
-  //   std::cout << "==================================" << std::endl;
-  //   std::cout << "curr_instr.is_branch == 1" << std::endl;
-  // }
-  // static std::string file_path = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/print_curr_instr.txt";
-  // // ファイルを追記モードで開く
-  // std::ofstream file_out(file_path, std::ios::app);
-
-  // // ファイルが正常に開かれたかを確認
-  // if (file_out.is_open()) {
-  //     // ファイルにデータを書き込む
-  //     file_out << "==============";
-  //     file_out << "curr_instr.ip " << curr_instr.ip;
-  //     file_out << "curr_instr.destination_memory " << curr_instr.destination_memory;
-  //     file_out << "curr_instr.is_gc_rtn_start " << curr_instr.is_gc_rtn_start;
-  //     file_out << "curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end;
-  //     file_out << "curr_instr.is_mark_end " << curr_instr.is_mark_end;
-
-  //     // ファイルを閉じる（これを忘れないようにしましょう）
-  //     file_out.close();
-  // } else {
-  //     std::cerr << "Error opening the file!" << std::endl;
-  // }
-}
-// taiga debug
 
 /* ===================================================================== */
 // Print routine function
@@ -206,9 +177,9 @@ VOID Print_rtn_end(CHAR* name)
 
 VOID Print_rtn_mark_end(CHAR* name)
 {
-  // std::cout << "====================" << " end " << name << "====================" << std::endl;
+  std::cout << "====================" << " is_mark_end " << name << "====================" << std::endl;
   curr_instr.is_mark_end = 1;
-  // std::cout << "==================curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
+  std::cout << "==================curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
   // strncpy(curr_instr.function_name, name, sizeof(curr_instr.function_name));
   // curr_instr.function_name[sizeof(curr_instr.function_name) - 1] = '\0';
   // std::cout << "-------" << "Print_rtn_end" << "-------" << std::endl;
@@ -234,88 +205,167 @@ VOID Print_rtn_mark_end(CHAR* name)
 // Instrumentation callbacks　ver Taiga
 /* ===================================================================== */
 #if (GC_TRACE==ENABLE)
-VOID Image(IMG img, VOID* v)
+VOID Routine(RTN rtn, VOID* v)
 {
-  for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec))
+  // GC_START rtn
+  if(RTN_Name(rtn) == GC_START) {
+    // Prepare for processing of RTN, an  RTN is not broken up into BBLs,
+    // it is merely a sequence of INSs 
+    RTN_Open(rtn);
+    // taiga debug
+    std::cout << "====================" << "Finded GC_start_rtn " << GC_START << "====================" << std::endl;
+    // taiga debug
+    RTN_InsertCall(rtn, IPOINT_BEFORE, (AFUNPTR)Print_rtn_start, IARG_ADDRINT, GC_START, IARG_END);
+     // For each instruction of the routine
+    // for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins))
+    // {
+    //     // Insert a call to docount to increment the instruction counter for this rtn
+    //     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_PTR, &(rc->_icount), IARG_END);
+    // }
+    RTN_Close(rtn);
+  }
+  
+}
+
+// VOID Instruction_gc_1(INS ins, VOID* v)
+// {
+//   // begin each instruction with this function
+//   // INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ResetCurrentInstruction, IARG_INST_PTR, IARG_END);
+// }
+
+VOID Instruction_gc_2(INS ins, VOID* v)
+{
+  // begin each instruction with this function
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ResetCurrentInstruction, IARG_INST_PTR, IARG_END);
+
+  // instrument branch instructions
+  if (INS_IsBranch(ins))
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
+
+  // instrument register reads
+  UINT32 readRegCount = INS_MaxNumRRegs(ins);
+  for (UINT32 i = 0; i < readRegCount; i++)
   {
-    for (RTN rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
-    {
-      bool rtn_is_gc_start = false;
-      // Prepare for processing of RTN, an  RTN is not broken up into BBLs,
-      // it is merely a sequence of INSs 
-      RTN_Open(rtn);
-      
-      // GC_START rtn
-      if(RTN_Name(rtn) == GC_START) {
-        rtn_is_gc_start = true;
-      }
-            
-      for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins))
-      {
-        // begin each instruction with this function
-        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ResetCurrentInstruction, IARG_INST_PTR, IARG_END);
+    UINT32 regNum = INS_RegR(ins, i);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
+    IARG_PTR, curr_instr.source_registers, IARG_PTR, curr_instr.source_registers + NUM_INSTR_SOURCES,
+    IARG_UINT32, regNum, IARG_END);
+  }
 
-        // instrument branch instructions
-        if (INS_IsBranch(ins))
-          INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
+  // instrument register writes
+  UINT32 writeRegCount = INS_MaxNumWRegs(ins);
+  for (UINT32 i = 0; i < writeRegCount; i++)
+  {
+    UINT32 regNum = INS_RegW(ins, i);
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
+    IARG_PTR, curr_instr.destination_registers, IARG_PTR, curr_instr.destination_registers + NUM_INSTR_DESTINATIONS,
+    IARG_UINT32, regNum, IARG_END);
+  }
 
-        // instrument register reads
-        UINT32 readRegCount = INS_MaxNumRRegs(ins);
-        for (UINT32 i = 0; i < readRegCount; i++)
-        {
-          UINT32 regNum = INS_RegR(ins, i);
-          INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
-                        IARG_PTR, curr_instr.source_registers, IARG_PTR, curr_instr.source_registers + NUM_INSTR_SOURCES,
-                        IARG_UINT32, regNum, IARG_END);
-        }
+  // instrument memory reads and writes
+  UINT32 memOperands = INS_MemoryOperandCount(ins);
 
-        // instrument register writes
-        UINT32 writeRegCount = INS_MaxNumWRegs(ins);
-        for (UINT32 i = 0; i < writeRegCount; i++)
-        {
-          UINT32 regNum = INS_RegW(ins, i);
-          INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
-                        IARG_PTR, curr_instr.destination_registers, IARG_PTR, curr_instr.destination_registers + NUM_INSTR_DESTINATIONS,
-                        IARG_UINT32, regNum, IARG_END);
-        }
-
-        // instrument memory reads and writes
-        UINT32 memOperands = INS_MemoryOperandCount(ins);
-
-        // Iterate over each memory operand of the instruction.
-        for (UINT32 memOp = 0; memOp < memOperands; memOp++)
-        {
-          if (INS_MemoryOperandIsRead(ins, memOp))
-            INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
+  // Iterate over each memory operand of the instruction.
+  for (UINT32 memOp = 0; memOp < memOperands; memOp++)
+  {
+    if (INS_MemoryOperandIsRead(ins, memOp))
+      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
                           IARG_PTR, curr_instr.source_memory, IARG_PTR, curr_instr.source_memory + NUM_INSTR_SOURCES,
                           IARG_MEMORYOP_EA, memOp, IARG_END);
-          if (INS_MemoryOperandIsWritten(ins, memOp))
-            INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
+    if (INS_MemoryOperandIsWritten(ins, memOp))
+        INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
                           IARG_PTR, curr_instr.destination_memory, IARG_PTR, curr_instr.destination_memory + NUM_INSTR_DESTINATIONS,
                           IARG_MEMORYOP_EA, memOp, IARG_END);
-        }
-        // GC_STARTの開始なら
-        if(rtn_is_gc_start == true) {
-          // taiga debug
-          // std::cout << "====================" << "Finded GC_start_rtn " << GC_START << "====================" << std::endl;
-          // taiga debug
-          INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_rtn_start, IARG_ADDRINT, GC_START, IARG_END);
-          rtn_is_gc_start = false;
-        }
+  }      
+  // finalize each instruction with this function
+  INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR)ShouldWrite, IARG_END);
+  INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteCurrentInstruction, IARG_END);
+
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ClearCurrentInstruction, IARG_END);
+}
+
+// VOID Image(IMG img, VOID* v)
+// {
+//   for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec))
+//   {
+//     for (RTN rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
+//     {
+//       bool rtn_is_gc_start = false;
+//       // Prepare for processing of RTN, an  RTN is not broken up into BBLs,
+//       // it is merely a sequence of INSs 
+//       RTN_Open(rtn);
+      
+//       // GC_START rtn
+//       if(RTN_Name(rtn) == GC_START) {
+//         rtn_is_gc_start = true;
+//       }
+            
+//       for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins))
+//       {
+//         // begin each instruction with this function
+//         INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)ResetCurrentInstruction, IARG_INST_PTR, IARG_END);
+
+//         // instrument branch instructions
+//         if (INS_IsBranch(ins))
+//           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
+
+//         // instrument register reads
+//         UINT32 readRegCount = INS_MaxNumRRegs(ins);
+//         for (UINT32 i = 0; i < readRegCount; i++)
+//         {
+//           UINT32 regNum = INS_RegR(ins, i);
+//           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
+//                         IARG_PTR, curr_instr.source_registers, IARG_PTR, curr_instr.source_registers + NUM_INSTR_SOURCES,
+//                         IARG_UINT32, regNum, IARG_END);
+//         }
+
+//         // instrument register writes
+//         UINT32 writeRegCount = INS_MaxNumWRegs(ins);
+//         for (UINT32 i = 0; i < writeRegCount; i++)
+//         {
+//           UINT32 regNum = INS_RegW(ins, i);
+//           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
+//                         IARG_PTR, curr_instr.destination_registers, IARG_PTR, curr_instr.destination_registers + NUM_INSTR_DESTINATIONS,
+//                         IARG_UINT32, regNum, IARG_END);
+//         }
+
+//         // instrument memory reads and writes
+//         UINT32 memOperands = INS_MemoryOperandCount(ins);
+
+//         // Iterate over each memory operand of the instruction.
+//         for (UINT32 memOp = 0; memOp < memOperands; memOp++)
+//         {
+//           if (INS_MemoryOperandIsRead(ins, memOp))
+//             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
+//                           IARG_PTR, curr_instr.source_memory, IARG_PTR, curr_instr.source_memory + NUM_INSTR_SOURCES,
+//                           IARG_MEMORYOP_EA, memOp, IARG_END);
+//           if (INS_MemoryOperandIsWritten(ins, memOp))
+//             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
+//                           IARG_PTR, curr_instr.destination_memory, IARG_PTR, curr_instr.destination_memory + NUM_INSTR_DESTINATIONS,
+//                           IARG_MEMORYOP_EA, memOp, IARG_END);
+//         }
+//         // GC_STARTの開始なら
+//         if(rtn_is_gc_start == true) {
+//           // taiga debug
+//           std::cout << "====================" << "Finded GC_start_rtn " << GC_START << "====================" << std::endl;
+//           // taiga debug
+//           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_rtn_start, IARG_ADDRINT, GC_START, IARG_END);
+//           rtn_is_gc_start = false;
+//         }
 
         
 
-        // finalize each instruction with this function
-        INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR)ShouldWrite, IARG_END);
-        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteCurrentInstruction, IARG_END);
+//         // finalize each instruction with this function
+//         INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR)ShouldWrite, IARG_END);
+//         INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteCurrentInstruction, IARG_END);
 
-        // INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_curr_instr, IARG_END);
-      }
+//         // INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_curr_instr, IARG_END);
+//       }
 
-      RTN_Close(rtn);
-    }
-  }
-}
+//       RTN_Close(rtn);
+//     }
+//   }
+// }
 #else //GC_TRACE
 /* ===================================================================== */
 // Instrumentation callbacks
@@ -418,7 +468,12 @@ int main(int argc, char* argv[])
 
 #if (GC_TRACE == ENABLE)
   // プリントファンクション
-  IMG_AddInstrumentFunction(Image, 0);
+  // Register function to be called to instrument instructions
+  // INS_AddInstrumentFunction(Instruction_gc_1, 0);
+  // IMG_AddInstrumentFunction(Image, 0);
+  RTN_AddInstrumentFunction(Routine,0);
+  // Register function to be called to instrument instructions
+  INS_AddInstrumentFunction(Instruction_gc_2, 0);
 #else
   // Register function to be called to instrument instructions
   INS_AddInstrumentFunction(Instruction, 0);
