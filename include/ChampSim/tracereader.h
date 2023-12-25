@@ -157,7 +157,7 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
         // auto end = std::next(begin, 2);
         std::transform(begin, end, std::back_inserter(instr_buffer), [cpu = this->cpu](T t)
             { return ooo_model_instr {cpu, t}; });
-        
+#if (GC_TRACE == ENABLE)
         // taiga debug
         // static int debug_inst_flag = 1;
         // if(debug_inst_flag == 1) {
@@ -167,17 +167,16 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
         //     debug_inst_flag = 0;
         // }
         
-        // for(long unsigned int i=0; i < trace_read_buf.size(); i++) {
-        //     if(trace_read_buf.at(i).is_gc_rtn_start==1) {
-        //         std::cout << "============trace_read_buf has is_gc_rtn_start=1============" << std::endl;
-        //     }
-            
-        // }
-        // for(long unsigned int i=0; i < instr_buffer.size(); i++) {
-        //     if(instr_buffer.at(i).is_gc_rtn_start==1) {
-        //         std::cout << "============instr_buffer has is_gc_rtn_start=1============" << std::endl;
-        //     }
-        // }
+        for(long unsigned int i=0; i < trace_read_buf.size(); i++) {
+            if(trace_read_buf.at(i).is_gc_rtn_start==1) {
+                std::cout << "============trace_read_buf has is_gc_rtn_start=1============" << std::endl;
+            }
+        }
+        for(long unsigned int i=0; i < instr_buffer.size(); i++) {
+            if(instr_buffer.at(i).is_gc_rtn_start==1) {
+                std::cout << "============instr_buffer has is_gc_rtn_start=1============" << std::endl;
+            }
+        }
         
         // for(auto tmp_instr : trace_read_buf) {
         //     if(tmp_instr.is_gc_rtn_start==1) {
@@ -190,7 +189,7 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
         //     }
         // }
         // taiga debug
-
+#endif // GC_TRACE
         // Set branch targets
         set_branch_targets(std::begin(instr_buffer), std::end(instr_buffer));
     }

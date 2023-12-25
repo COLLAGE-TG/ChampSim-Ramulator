@@ -464,7 +464,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     // debug
     if(rob_entry.is_mark_end == 1) {
         // degug
-        std::cout << "is_mark_end == 1" << std::endl;
+        // std::cout << "is_mark_end == 1" << std::endl;
         // degug
     }
     // debug
@@ -472,19 +472,19 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // degug
         std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
         // degug
-        // static long prev_gc_start = 0; //前のGC_STARTの位置を覚えている　この必要あるか？
-        // FILE *file;
-        // file = fopen(marked_bit_file_path, "r");
-        // char tmp_buf[100]; //読み込んだデータを一行分保存
-        // // ファイルから一行ずつ読み込む
-        // while (fgets(tmp_buf, sizeof(tmp_buf), file) != NULL) {
-        //     printf("読み込んだ行: %s", tmp_buf);
-        //     // GC_START,END,FULLによって場合分け
-        // }
 
-
-        // fclose(file);
     }
+    if(rob_entry.is_gc_rtn_end == 1) {
+        // degug
+        std::cout << "is_gc_rtn_end == 1(ooo_cpu.cc)" << std::endl;
+        // degug
+    }
+    if(rob_entry.is_gc_rtn_sweep_end == 1) {
+        // degug
+        std::cout << "is_gc_rtn_sweep_end == 1(ooo_cpu.cc)" << std::endl;
+        // degug
+    }
+
 
 #endif // GC_TRACE
 // taiga added

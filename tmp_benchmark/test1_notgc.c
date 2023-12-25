@@ -8,8 +8,8 @@ int main(void)
   // GC_INIT();
   printf("start\n");
   long long Np = 100;
-  long long Nc = 1000000;
-  long long M = 10; //繰り返し
+  long long Nc = 100;
+  long long M = 100; //繰り返し
 
   for (long long i = 0;i < M;i++)
   {
@@ -32,14 +32,14 @@ int main(void)
     }
 
     // 平均を出す。
-    for (long long p = 0; p < Np; p++)
-    {
-      for (long long q = 0; q < Nc; q = q + 8) //cache lineの大きさが64B、ll intの大きさが8Bなので８ずつアクセスすれば配列の持つ全てのメモリ空間にアクセスできる。
-      {
-        if (q >= Nc) break;
-        long long res = (ph[p] + ch[q]) / 2;
-      }
-    }
+    // for (long long p = 0; p < Np; p++)
+    // {
+    //   for (long long q = 0; q < Nc; q = q + 8) //cache lineの大きさが64B、ll intの大きさが8Bなので８ずつアクセスすれば配列の持つ全てのメモリ空間にアクセスできる。
+    //   {
+    //     if (q >= Nc) break;
+    //     long long res = (ph[p] + ch[q]) / 2;
+    //   }
+    // }
 
     // 結果を出力
     // for(ll k=0; k<N; k++){

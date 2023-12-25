@@ -18,6 +18,7 @@
 #define TRACE_INSTRUCTION_H
 
 #include <limits>
+#include "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/include/ProjectConfiguration.h"
 
 // special registers that help us identify branches
 namespace champsim
@@ -53,6 +54,7 @@ struct input_instr
     unsigned char is_gc_rtn_start;
     unsigned char is_gc_rtn_end;
     unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
+    unsigned char is_gc_rtn_sweep_end;
     // char function_name[256];
 #endif
 };
@@ -80,6 +82,7 @@ struct cloudsuite_instr
     unsigned char is_gc_rtn_start;
     unsigned char is_gc_rtn_end;
     unsigned char is_mark_end; //マークが終了。tmp.txtからmarked addressを読み出す。
+    unsigned char is_gc_rtn_sweep_end;
     // char function_name[256];
 #endif
 };

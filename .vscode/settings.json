@@ -101,7 +101,8 @@
         "span": "cpp",
         "typeindex": "cpp",
         "valarray": "cpp",
-        "__std_stream": "cpp"
+        "__std_stream": "cpp",
+        "*.ph": "cpp"
     },
     "editor.tabSize": 4,
     "editor.indentSize": "tabSize",
