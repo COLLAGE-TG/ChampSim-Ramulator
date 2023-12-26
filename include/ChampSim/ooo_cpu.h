@@ -44,6 +44,7 @@
 #include "ChampSim/util/lru_table.h"
 #include "ProjectConfiguration.h" // User file
 #include "main.h"
+// #include "ChampSim/vmem.h"
 
 enum STATUS
 {
@@ -208,6 +209,9 @@ public:
     uint64_t sim_cycle() const { return current_cycle - sim_stats.begin_cycles; }
 
     void print_deadlock() override final;
+    // taiga added
+    // void print_pte_page_size();
+    // taiga added
 
 #if (USER_CODES == ENABLE)
     /* Definition and declaration for branch predictors */
@@ -304,6 +308,10 @@ public:
     {
     };
 
+    // taiga added
+    // VirtualMemory* vmem;
+    // taiga added
+
     template<unsigned long long B_FLAG = 0, unsigned long long T_FLAG = 0>
     class Builder
     {
@@ -339,6 +347,10 @@ public:
         long int m_l1d_bw {};
         champsim::channel* m_fetch_queues {};
         champsim::channel* m_data_queues {};
+
+        // taiga added
+        // VirtualMemory* m_vmem {};
+        // taiga added
 
         friend class O3_CPU;
 
@@ -532,13 +544,13 @@ public:
             return *this;
         }
 
-        // taiga added
-        // self_type& vmem(champsim::channel* vmem)
+        // // taiga added
+        // self_type& virtual_memory(champsim::channel* vmem_)
         // {
-        //     m_data_queues = data_queues_;
+        //     m_vmem = vmem_;
         //     return *this;
         // }
-        // taiga added
+        // // taiga added
 
         template<unsigned long long B>
         Builder<B, T_FLAG> branch_predictor()
@@ -563,6 +575,7 @@ public:
       BRANCH_MISPREDICT_PENALTY(b.m_mispredict_penalty), DISPATCH_LATENCY(b.m_dispatch_latency), DECODE_LATENCY(b.m_decode_latency),
       SCHEDULING_LATENCY(b.m_schedule_latency), EXEC_LATENCY(b.m_execute_latency), L1I_BANDWIDTH(b.m_l1i_bw), L1D_BANDWIDTH(b.m_l1d_bw),
       L1I_bus(b.m_cpu, b.m_fetch_queues), L1D_bus(b.m_cpu, b.m_data_queues), l1i(b.m_l1i), module_pimpl(std::make_unique<module_model<B_FLAG, T_FLAG>>(this))
+    //   vmem(b.m_vmem)
     {
     }
 };
@@ -622,10 +635,10 @@ std::pair<uint64_t, uint8_t> O3_CPU::module_model<B_FLAG, T_FLAG>::impl_btb_pred
 // taiga added
 #if (GC_TRACE==ENABLE)
 // taiga debug
-void print_pte_page_size()
-{
-    std::cout << "vmem.pte_page_size" << vmem.pte_page_size << std::endl;
-}
+// void O3_CPU::print_pte_page_size()
+// {
+//     std::cout << "vmem.pte_page_size" << vmem->pte_page_size << std::endl;
+// }
 // taiga debug
 
 // std::vector<uint64_t> find_marked_pages()

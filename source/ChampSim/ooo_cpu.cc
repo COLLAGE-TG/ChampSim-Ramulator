@@ -462,7 +462,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 // taiga added
 #if (GC_TRACE == ENABLE)
     // debug
-
+    // print_pte_page_size();
     // if(rob_entry.is_mark_end == 1) {
     //     // degug
     //     // std::cout << "is_mark_end == 1" << std::endl;
@@ -489,7 +489,6 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 
 #endif // GC_TRACE
 // taiga added
-
 }
 
 void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
