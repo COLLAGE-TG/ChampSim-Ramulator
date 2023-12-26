@@ -131,7 +131,7 @@
                 "90000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
-                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/not_function_name_test1_100000_100000.champsim.xz"
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/sweep_end_test1_200000_2000000000.champsim.xz"
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",

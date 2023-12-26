@@ -32,6 +32,9 @@
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #include "ChampSim/champsim_constants.h"
 #include "ChampSim/channel.h"
@@ -40,6 +43,7 @@
 #include "ChampSim/operable.h"
 #include "ChampSim/util/lru_table.h"
 #include "ProjectConfiguration.h" // User file
+#include "main.h"
 
 enum STATUS
 {
@@ -528,6 +532,14 @@ public:
             return *this;
         }
 
+        // taiga added
+        // self_type& vmem(champsim::channel* vmem)
+        // {
+        //     m_data_queues = data_queues_;
+        //     return *this;
+        // }
+        // taiga added
+
         template<unsigned long long B>
         Builder<B, T_FLAG> branch_predictor()
         {
@@ -539,6 +551,7 @@ public:
         {
             return Builder<B_FLAG, T> {builder_conversion_tag {}, *this};
         }
+
     };
 
     template<unsigned long long B_FLAG, unsigned long long T_FLAG>
@@ -605,6 +618,44 @@ std::pair<uint64_t, uint8_t> O3_CPU::module_model<B_FLAG, T_FLAG>::impl_btb_pred
     if constexpr ((T_FLAG & O3_CPU::tbtbDbasic_btb) != 0) result = joiner(result, intern_->btb_btbDbasic_btb_btb_prediction(ip));
     return result;
 }
+
+// taiga added
+#if (GC_TRACE==ENABLE)
+// taiga debug
+void print_pte_page_size()
+{
+    std::cout << "vmem.pte_page_size" << vmem.pte_page_size << std::endl;
+}
+// taiga debug
+
+// std::vector<uint64_t> find_marked_pages()
+// {
+//     std::vector<uint64_t> result;
+
+//     // ファイル名
+//     // const std::string filename = "";
+//     // taiga debug
+//     // ファイル名（後で変える）
+//     const std::string filename = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_gc_marked_pages_files/sample_marked_pages.txt";
+//     std::cout << "このシミュレーションではmarked pageにsampleを利用しています。実際には変更を加える必要があります。" << std::endl;
+//     // taiga debug
+//     // ファイルを開く
+//     std::ifstream file(filename);
+
+//     // ファイルの存在を確認
+//     if (!file.is_open()) {
+//         std::cerr << "Error: Could not open file '" << filename << "'" << std::endl;
+//         about();
+//         return result;
+//     }
+
+
+//     return result;
+// }
+
+#endif
+// taiga added
+
 #else
 #include "ooo_cpu_module_def.inc"
 #endif // USER_CODES

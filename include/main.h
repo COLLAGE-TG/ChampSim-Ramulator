@@ -194,6 +194,7 @@ public:
                      .btb<BRANCH_TARGET_BUFFER>()
                      .fetch_queues(&cpu0_to_cpu0_L1I_queues)
                      .data_queues(&cpu0_to_cpu0_L1D_queues)};
+                    //  .virtual_memory(&vmem) // taiga added
 
 #if (CPU_USE_MULTIPLE_CORES == ENABLE)
     CACHE cpu1_DTLB {CACHE::Builder {champsim::defaults::default_dtlb}

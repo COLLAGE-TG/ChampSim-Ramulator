@@ -189,12 +189,6 @@ VOID Print_rtn_sweep_end(CHAR* name)
   // std::cout << "==================curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << "============" << std::endl;
 }
 
-VOID OnMainReturn(VOID* arg) {
-    std::cout << "Instrumentation at main return" << std::endl;
-    // ここに追加のインストルメンテーションを挿入するか、必要に応じて処理を記述します。
-
-}
-
 // taiga debug
 VOID Print_inscount() {
   std::cout << "instruction count = " << instrCount << std::endl; 
@@ -337,14 +331,10 @@ VOID Image(IMG img, VOID* v)
             rtn_is_sweep = false;
           }
         }
-
-        
-
         // finalize each instruction with this function
         INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR)ShouldWrite, IARG_END);
         INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteCurrentInstruction, IARG_END);
       }
-
       RTN_Close(rtn);
     }
   }

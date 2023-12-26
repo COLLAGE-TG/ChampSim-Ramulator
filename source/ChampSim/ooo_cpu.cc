@@ -462,11 +462,12 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 // taiga added
 #if (GC_TRACE == ENABLE)
     // debug
-    if(rob_entry.is_mark_end == 1) {
-        // degug
-        // std::cout << "is_mark_end == 1" << std::endl;
-        // degug
-    }
+
+    // if(rob_entry.is_mark_end == 1) {
+    //     // degug
+    //     // std::cout << "is_mark_end == 1" << std::endl;
+    //     // degug
+    // }
     // debug
     if(rob_entry.is_gc_rtn_start == 1) {
         // degug
@@ -488,7 +489,6 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 
 #endif // GC_TRACE
 // taiga added
-
 
 }
 
