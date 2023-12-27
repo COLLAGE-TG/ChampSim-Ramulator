@@ -43,8 +43,7 @@
 #include "ChampSim/operable.h"
 #include "ChampSim/util/lru_table.h"
 #include "ProjectConfiguration.h" // User file
-#include "main.h"
-// #include "ChampSim/vmem.h"
+#include "ChampSim/vmem.h"
 
 enum STATUS
 {
@@ -209,9 +208,154 @@ public:
     uint64_t sim_cycle() const { return current_cycle - sim_stats.begin_cycles; }
 
     void print_deadlock() override final;
-    // taiga added
-    // void print_pte_page_size();
-    // taiga added
+#if (GC_TRACE==ENABLE) // taiga added
+    // taiga debug
+    void print_pte_page_size()
+    {
+        std::cout << "vmem.pte_page_size " << vmem->pte_page_size << std::endl;
+    }
+    // taiga debug
+    std::vector<uint64_t> find_marked_pages()
+    {
+        static char gc_count = '1';
+        std::vector<uint64_t> p_marked_pages = {}, v_marked_pages = {};
+        uint64_t v_page_start_address, v_page_end_address;
+        uint64_t v_page_start_page, v_page_end_page;
+        bool start_end_flag = false; //start address : false, end address : true;
+        bool is_there_any_marked_pages = false;
+        // ファイル名
+        std::string filename = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_gc_marked_pages_files";
+
+        // ファイルストリームを開く
+        std::ifstream file_stream(filename);
+        // ファイルが正しく開かれたかを確認
+        if (!file_stream.is_open()) {
+            std::cerr << "ファイルを開くことができませんでした: " << filename << std::endl;
+            abort();
+        }
+        // ファイルからデータを読み込む
+        std::string line;
+        bool read_flag = false;
+        while (std::getline(file_stream, line)) {
+            // std::cout << line << std::endl; // 読み込んだ行を表示
+            if(line[0] == gc_count) { //対象のマークページを検出
+                read_flag = true;
+                // error check
+                if(line.size() != 1) {
+                    std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+                    abort();
+                }
+                std::getline(file_stream, line);
+                if(line != "GC_start") {
+                    std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+                    abort();
+                }
+                // error check
+                continue;
+            }
+            if(read_flag) {
+                std::string check_start_end = line.substr(0,5);
+                if(check_start_end == "sta_ad") {
+                    is_there_any_marked_pages = true; //marked pageがあります
+                    // error check
+                    if(start_end_flag != false) {
+                        std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+                        abort();
+                    }
+
+                    std::string marked_start_address_hex = line.substr(7,20);
+                    try {
+                        size_t pos; //デバッグ用
+                        v_page_start_address = std::stoull(marked_start_address_hex, &pos, 16);
+
+                        // pos が文字列の長さと一致することを確認（余分な文字がないことを確認）
+                        if (pos == marked_start_address_hex.length()) {
+                            std::cout << "変換成功: " << v_page_start_address << std::endl;
+                        } else {
+                            std::cerr << "変換失敗: 不正な文字が存在します" << std::endl;
+                        }
+                    } catch (const std::invalid_argument& e) {
+                        std::cerr << "変換失敗: 無効な引数です" << std::endl;
+                    } catch (const std::out_of_range& e) {
+                        std::cerr << "変換失敗: 範囲外です" << std::endl;
+                    }
+
+                    start_end_flag = true; //次はend address
+                }
+                else if(check_start_end == "end_ad") {
+                    // error check
+                    if(start_end_flag == false) {
+                        std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+                        abort();
+                    }
+
+                    // end addressを取得
+                    std::string marked_end_address_hex = line.substr(7,20);
+                    try {
+                        size_t pos; //デバッグ用
+                        v_page_end_address = std::stoull(marked_end_address_hex, &pos, 16);
+
+                        // pos が文字列の長さと一致することを確認（余分な文字がないことを確認）
+                        if (pos == marked_end_address_hex.length()) {
+                            std::cout << "変換成功: " << v_page_end_address << std::endl;
+                        } else {
+                            std::cerr << "変換失敗: 不正な文字が存在します" << std::endl;
+                        }
+                    } catch (const std::invalid_argument& e) {
+                        std::cerr << "変換失敗: 無効な引数です" << std::endl;
+                    } catch (const std::out_of_range& e) {
+                        std::cerr << "変換失敗: 範囲外です" << std::endl;
+                    }
+
+                    // v_marked_pagesにマークされたページを追加
+                    v_page_start_page = v_page_start_address >> LOG2_PAGE_SIZE;
+                    v_page_end_page = v_page_end_address >> LOG2_PAGE_SIZE;
+                    for (uint64_t i = v_page_start_page; i <= v_page_end_page; i++) {
+                        v_marked_pages.push_back(i);
+                    }
+
+                    start_end_flag = false; //次はstart address
+                }
+                else if(check_start_end == "GC_end") {
+                    break;
+                }
+                else {
+                    std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+                    abort();
+                }
+            }
+        }
+
+        file_stream.close();
+
+        // error check
+        if(start_end_flag == true) {
+            std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+            abort();
+        }
+
+        // マークされたページがなかった場合
+        if(is_there_any_marked_pages == false) {
+            // debug
+            std::cout << "Warnig : markされたページがありません" << std::endl;
+            // debug
+            return p_marked_pages; // 空の配列
+        }
+
+        // vpage to ppage
+        for (uint64_t i = 0; i < v_marked_pages.size(); i++) {
+            p_marked_pages.push_back(vmem->va_to_pa(CPU_0, v_marked_pages.at(i)).first); // va_to_paの第一引数変えたほうがいい
+            // taiga debug
+            std::cout << "p_marked_page " << p_marked_pages.at(i) << std::endl;
+            // taiga debug
+        }
+
+        gc_count = gc_count + 1;
+
+        return p_marked_pages;
+    }
+#endif //GC_TRACE
+
 
 #if (USER_CODES == ENABLE)
     /* Definition and declaration for branch predictors */
@@ -309,7 +453,7 @@ public:
     };
 
     // taiga added
-    // VirtualMemory* vmem;
+    VirtualMemory* vmem;
     // taiga added
 
     template<unsigned long long B_FLAG = 0, unsigned long long T_FLAG = 0>
@@ -349,7 +493,7 @@ public:
         champsim::channel* m_data_queues {};
 
         // taiga added
-        // VirtualMemory* m_vmem {};
+        VirtualMemory* m_vmem {};
         // taiga added
 
         friend class O3_CPU;
@@ -545,11 +689,11 @@ public:
         }
 
         // // taiga added
-        // self_type& virtual_memory(champsim::channel* vmem_)
-        // {
-        //     m_vmem = vmem_;
-        //     return *this;
-        // }
+        self_type& virtual_memory(VirtualMemory* vmem_)
+        {
+            m_vmem = vmem_;
+            return *this;
+        }
         // // taiga added
 
         template<unsigned long long B>
@@ -574,8 +718,8 @@ public:
       SCHEDULER_SIZE(b.m_schedule_width), EXEC_WIDTH(b.m_execute_width), LQ_WIDTH(b.m_lq_width), SQ_WIDTH(b.m_sq_width), RETIRE_WIDTH(b.m_retire_width),
       BRANCH_MISPREDICT_PENALTY(b.m_mispredict_penalty), DISPATCH_LATENCY(b.m_dispatch_latency), DECODE_LATENCY(b.m_decode_latency),
       SCHEDULING_LATENCY(b.m_schedule_latency), EXEC_LATENCY(b.m_execute_latency), L1I_BANDWIDTH(b.m_l1i_bw), L1D_BANDWIDTH(b.m_l1d_bw),
-      L1I_bus(b.m_cpu, b.m_fetch_queues), L1D_bus(b.m_cpu, b.m_data_queues), l1i(b.m_l1i), module_pimpl(std::make_unique<module_model<B_FLAG, T_FLAG>>(this))
-    //   vmem(b.m_vmem)
+      L1I_bus(b.m_cpu, b.m_fetch_queues), L1D_bus(b.m_cpu, b.m_data_queues), l1i(b.m_l1i), module_pimpl(std::make_unique<module_model<B_FLAG, T_FLAG>>(this)),
+      vmem(b.m_vmem)
     {
     }
 };
@@ -634,12 +778,7 @@ std::pair<uint64_t, uint8_t> O3_CPU::module_model<B_FLAG, T_FLAG>::impl_btb_pred
 
 // taiga added
 #if (GC_TRACE==ENABLE)
-// taiga debug
-// void O3_CPU::print_pte_page_size()
-// {
-//     std::cout << "vmem.pte_page_size" << vmem->pte_page_size << std::endl;
-// }
-// taiga debug
+
 
 // std::vector<uint64_t> find_marked_pages()
 // {

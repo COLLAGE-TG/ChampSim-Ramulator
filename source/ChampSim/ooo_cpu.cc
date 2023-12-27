@@ -473,6 +473,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // degug
         std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
         // degug
+        std::vector<uint64_t> marked_pages = find_marked_pages();
 
     }
     if(rob_entry.is_gc_rtn_end == 1) {
