@@ -627,6 +627,33 @@ void simulation_run(const ramulator::Config& configs, ramulator::Memory<T, ramul
 #if (PRINT_STATISTICS_INTO_FILE == ENABLE)
     std::fprintf(output_statistics.file_handler, "\n*** ChampSim Multicore Out-of-Order Simulator ***\nWarmup Instructions: %ld\nSimulation Instructions: %ld\nNumber of CPUs: %ld\nPage size: %d\n\n", input_parameter.phases.at(0).length, input_parameter.phases.at(1).length, std::size(gen_environment.cpu_view()), PAGE_SIZE);
 #endif // PRINT_STATISTICS_INTO_FILE
+// taiga added
+#if (GC_TRACE == ENABLE)
+    std::string tmp_marked_page_file_name = input_parameter.trace_names[0]; //ooo_cpuに渡す
+    // taiga debug
+    std::cout << "tmp_marked_page_file_name.xz : " << tmp_marked_page_file_name << std::endl; 
+    // taiga debug
+    // ".champsim.xz" を ".txt" に置き換え
+    size_t dotPos = tmp_marked_page_file_name.find(".champsim.xz");
+    if (dotPos != std::string::npos) {
+        tmp_marked_page_file_name.replace(dotPos, std::string::npos, ".txt");
+    }
+    // "tmp_trace" を "tmp_gc" に置き換え
+    size_t lastSlashPos = tmp_marked_page_file_name.find_last_of("/");
+    if (lastSlashPos != std::string::npos) {
+        tmp_marked_page_file_name.replace(0, lastSlashPos + 1, "tmp_gc_marked_pages_files/");
+    } else {
+        // スラッシュが見つからない場合、何もしないかエラーハンドリングが必要です。
+        std::cerr << "Error: ファイルパスにスラッシュが含まれていません。" << std::endl;
+        abort();
+    }
+
+    // taiga debug
+    std::cout << "tmp_marked_page_file_name.txt : " << tmp_marked_page_file_name << std::endl; 
+    // taiga debug
+    O3_CPU::marked_page_file_name = tmp_marked_page_file_name;
+#endif
+// taiga added
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE) && (TEST_SWAPPING_UNIT == ENABLE)
     /* Test */

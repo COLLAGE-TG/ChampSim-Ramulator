@@ -15,7 +15,7 @@ FILE_NAME="${SAMPLE_FILENAME_NO_DOT}_${WARMUP}_${SAMPLE_INST}.champsim"
 if [ $DO_GC -eq 1 ]; then
   gcc -I${GC_ROOT}/include -L${GC_ROOT}/.libs -Wl,-R${GC_ROOT}/lib ${1} -lgc -o ${SAMPLE_FILENAME_NO_DOT}.out
 elif [ $DO_GC -eq 0 ]; then
-  gcc ${1}
+  gcc ${SAMPLE_FILENAME}
 else
   echo "DO_GCの引数は0または1です。"
   exit 1
@@ -25,3 +25,4 @@ echo "/usr/bin/time ./${SAMPLE_FILENAME_NO_DOT}.out"
 /usr/bin/time ./${SAMPLE_FILENAME_NO_DOT}.out
 echo "$PIN_ROOT/pin -t /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tracer/pin/obj-intel64/champsim_tracer.so -o /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/${FILE_NAME} -s ${WARMUP} -t ${SAMPLE_INST} -- /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_benchmark/./${SAMPLE_FILENAME_NO_DOT}.out"
 $PIN_ROOT/pin -t /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tracer/pin/obj-intel64/champsim_tracer.so -o /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/${FILE_NAME} -s ${WARMUP} -t ${SAMPLE_INST} -- /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_benchmark/./${SAMPLE_FILENAME_NO_DOT}.out
+xz ../tmp_trace/${SAMPLE_FILENAME_NO_DOT}_${WARMUP}_${SAMPLE_INST}.champsim
