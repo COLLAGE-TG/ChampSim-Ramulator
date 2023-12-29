@@ -192,6 +192,7 @@ private:
     // void swap_all_start();
     void migration_all_start();
 #endif
+
 #endif // MEMORY_USE_SWAPPING_UNIT
 };
 

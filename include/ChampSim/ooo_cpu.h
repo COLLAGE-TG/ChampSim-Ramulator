@@ -44,7 +44,14 @@
 #include "ChampSim/util/lru_table.h"
 #include "ProjectConfiguration.h" // User file
 #include "ChampSim/vmem.h"
+// #include "ChampSim/dram_controller.h"
 
+// taiga added
+// #if(GC_TRACE==ENABLE)
+// #include "Ramulator/DDR4.h" 
+// #include "Ramulator/HBM.h"
+// #endif // GC_TRACE
+// taiga added
 enum STATUS
 {
     INFLIGHT  = 1,
@@ -211,6 +218,7 @@ public:
 #if (GC_TRACE==ENABLE) // taiga added
     static std::string marked_page_file_name;
     std::vector<uint64_t> find_marked_pages();
+    uint64_t migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management);
 #endif //GC_TRACE
 
 
@@ -311,6 +319,7 @@ public:
 
     // taiga added
     VirtualMemory* vmem;
+    OS_TRANSPARENT_MANAGEMENT* os_transparent_management;
     // taiga added
 
     template<unsigned long long B_FLAG = 0, unsigned long long T_FLAG = 0>
@@ -351,6 +360,7 @@ public:
 
         // taiga added
         VirtualMemory* m_vmem {};
+        OS_TRANSPARENT_MANAGEMENT* m_os_transparent_management {};
         // taiga added
 
         friend class O3_CPU;
@@ -551,6 +561,12 @@ public:
             m_vmem = vmem_;
             return *this;
         }
+
+        self_type& os_transparent_management(OS_TRANSPARENT_MANAGEMENT* os_transparent_management_)
+        {
+            m_os_transparent_management = os_transparent_management_;
+            return *this;
+        }
         // // taiga added
 
         template<unsigned long long B>
@@ -576,7 +592,7 @@ public:
       BRANCH_MISPREDICT_PENALTY(b.m_mispredict_penalty), DISPATCH_LATENCY(b.m_dispatch_latency), DECODE_LATENCY(b.m_decode_latency),
       SCHEDULING_LATENCY(b.m_schedule_latency), EXEC_LATENCY(b.m_execute_latency), L1I_BANDWIDTH(b.m_l1i_bw), L1D_BANDWIDTH(b.m_l1d_bw),
       L1I_bus(b.m_cpu, b.m_fetch_queues), L1D_bus(b.m_cpu, b.m_data_queues), l1i(b.m_l1i), module_pimpl(std::make_unique<module_model<B_FLAG, T_FLAG>>(this)),
-      vmem(b.m_vmem)
+      vmem(b.m_vmem),os_transparent_management(b.m_os_transparent_management)
     {
     }
 };

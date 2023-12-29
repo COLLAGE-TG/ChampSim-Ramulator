@@ -36,6 +36,7 @@
 #include "ChampSim/util/span.h"
 #include "/home/funkytaiga/tools/gc-8.2.2/include/for_champsim.h"
 
+
 std::chrono::seconds elapsed_time();
 
 long O3_CPU::operate()
@@ -474,7 +475,8 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
         // degug
         std::vector<uint64_t> marked_pages = find_marked_pages();
-
+        uint64_t migration_cycles = migration_with_gc(marked_pages, os_transparent_management);
+        // uint64_t migration_cycles = memory_controller->migration_with_gc(marked_pages);
     }
     if(rob_entry.is_gc_rtn_end == 1) {
         // degug
@@ -646,6 +648,15 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
 
     return p_marked_pages;
 }
+
+uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
+    uint64_t cycles_of_migrations = 0;
+    std::cout << "migration_with_gc here" << std::endl;
+    std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
+    std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
+    return cycles_of_migrations;
+}
+
 #endif // GC_TRACE
 // taiga added
 void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
