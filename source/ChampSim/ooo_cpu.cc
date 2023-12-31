@@ -496,7 +496,7 @@ std::string O3_CPU::marked_page_file_name = "";
 
 std::vector<uint64_t> O3_CPU::find_marked_pages()
 {
-    static char gc_count = '1';
+    static int gc_count = 1;
     std::vector<uint64_t> p_marked_pages = {}, v_marked_pages = {};
     uint64_t v_page_start_address, v_page_end_address;
     uint64_t v_page_start_page, v_page_end_page;
@@ -520,13 +520,16 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
     // bool full_gc_flag = false;
     while (std::getline(file_stream, line)) {
         // std::cout << line << std::endl; // 読み込んだ行を表示
-        if(line[0] == gc_count) { //対象のマークページを検出
+        int gc_count_line; //gc_countをintに変換
+        if('0' <= line[0] && line[0] <= '9') {
+            gc_count_line = std::stoi(line);
+        }
+        else {
+            gc_count_line = 999999999; //ありえない値を挿入
+        }
+
+        if(gc_count_line == gc_count) { //対象のマークページを検出
             read_flag = true;
-            // error check
-            if(line.size() != 1) {
-                std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
-                abort();
-            }
             std::getline(file_stream, line);
             if(line != "GC_start") {
                 std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
@@ -640,7 +643,14 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
 
     // vpage to ppage
     for (uint64_t i = 0; i < v_marked_pages.size(); i++) {
-        p_marked_pages.push_back(vmem->va_to_pa(CPU_0, v_marked_pages.at(i)).first); // va_to_paの第一引数変えたほうがいい
+        uint64_t v_marked_pages_top_address = v_marked_pages.at(i) << LOG2_PAGE_SIZE;
+        auto [p_marked_pages_top_address, check_p_address_is_exist] = vmem->va_to_pa(CPU_0, v_marked_pages_top_address); // va_to_paの第一引数変えたほうがいい
+        // すでに仮想アドレスに対応する物理アドレスがあれば、check_p_address_is_exist!=0
+        if(check_p_address_is_exist != 0) {
+            std::cout << "WARNIG : GC時のマイグレーションにおいて、マークされているオブジェクトの仮想アドレスに対応する物理アドレスがありません" << std::endl;
+        }
+        uint64_t p_marked_page_address = p_marked_pages_top_address >> LOG2_PAGE_SIZE; //ページアドレスに変換
+        p_marked_pages.push_back(p_marked_page_address); 
         // taiga debug
         std::cout << "p_marked_page " << p_marked_pages.at(i) << std::endl;
         // taiga debug

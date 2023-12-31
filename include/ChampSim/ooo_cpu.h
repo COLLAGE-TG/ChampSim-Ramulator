@@ -219,6 +219,7 @@ public:
     static std::string marked_page_file_name;
     std::vector<uint64_t> find_marked_pages();
     uint64_t migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management);
+    
 #endif //GC_TRACE
 
 
