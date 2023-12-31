@@ -35,6 +35,7 @@
 #include "ChampSim/instruction.h"
 #include "ChampSim/util/span.h"
 #include "/home/funkytaiga/tools/gc-8.2.2/include/for_champsim.h"
+#include "history_based_page_selection.h"
 
 
 std::chrono::seconds elapsed_time();
@@ -477,6 +478,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         std::vector<uint64_t> marked_pages = find_marked_pages();
         uint64_t migration_cycles = migration_with_gc(marked_pages, os_transparent_management);
         // uint64_t migration_cycles = memory_controller->migration_with_gc(marked_pages);
+        std::cout << "migration_cycles " << migration_cycles << std::endl; //debug
     }
     if(rob_entry.is_gc_rtn_end == 1) {
         // degug
@@ -649,11 +651,17 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
     return p_marked_pages;
 }
 
-uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
+uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> marked_pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
     uint64_t cycles_of_migrations = 0;
-    std::cout << "migration_with_gc here" << std::endl;
-    std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
-    std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
+    // std::cout << "migration_with_gc here" << std::endl;
+    // std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
+    // std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
+    // リマッピングリクエスト作成
+    os_transparent_management->choose_hotpage_with_sort_with_gc(marked_pages);
+    os_transparent_management->add_new_remapping_request_to_queue_with_gc(marked_pages);
+    cycles_of_migrations = os_transparent_management->migration_all_start_with_gc();
+    os_transparent_management->initialize_hotness_table_with_gc(os_transparent_management->hotness_table_with_gc);
+
     return cycles_of_migrations;
 }
 

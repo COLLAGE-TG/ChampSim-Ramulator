@@ -11,6 +11,7 @@ OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint6
   fast_memory_offset_bit(champsim::lg2(fast_memory_max_address)), // Note here only support integers of 2's power.
   counter_table(*(new std::vector<COUNTER_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, COUNTER_DEFAULT_VALUE))),
   hotness_table(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))),
+  hotness_table_with_gc(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))), // taiga added
   remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
 {
     hotness_threshold                            = HOTNESS_THRESHOLD; //まずは1に設定しよう
@@ -120,6 +121,34 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
         hotness_table.at(tmp_hotpage_data_block_address) = true;
         hotness_data_block_address_queue.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
     }
+
+    return true;
+}
+
+bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t> marked_pages)
+{
+    // debug
+    std::cout << "=============marked pages : count===============" << std::endl;
+    for(uint64_t i = 0; i < marked_pages.size(); i++) {
+        uint64_t curr_p_page = marked_pages.at(i);
+        // check
+        if(curr_p_page < 0 || curr_p_page >=total_capacity_at_data_block_granularity) {
+            std::cout << "marked_pagesのアドレスが不正な値です" << std::endl;
+            abort();
+        }
+        // taiga debug
+        std::cout << curr_p_page << " : " << counter_table.at(curr_p_page) << std::endl;
+        // taiga debug
+        // curr_p_pageがHOTNESSかどうか判断
+        if(counter_table.at(curr_p_page) >= HOTNESS_THRESHORD_WITH_GC) {
+            // hotness tableを更新
+            hotness_table_with_gc.at(curr_p_page) = true;
+            hotness_data_block_address_queue_with_gc.push(curr_p_page);
+        }
+        
+    }
+
+    std::cout << "=============marked pages : count (end)===============" << std::endl; // debug
 
     return true;
 }
@@ -368,6 +397,80 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
     return true;
 }
 
+bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t> marked_pages)
+{
+    // GCを行うときに用いるadd_remapping_request
+    // ================================migration ver================================
+    // hotness_data_block_address_queueのページを高速メモリに移動させるためのremapping_request発行
+    // 片方の有効bitがtrueならmigration回数は1回
+    // 両方の有効bitがtrueならmigration回数は2回
+    // 有効bitがfalseのページを低速メモリへ
+
+    // ホットではないページを低速メモリへ
+    for(uint64_t p_data_block_address = 0; p_data_block_address < total_capacity_at_data_block_granularity; p_data_block_address++) {
+        // キューが空なら終了
+        if(hotness_data_block_address_queue_with_gc.empty()) {
+            break;
+        }
+        // コールドページかつ高速メモリにあるなら
+        if(counter_table.at(p_data_block_address) < HOTNESS_THRESHORD_WITH_GC) {
+            uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
+            // 高速メモリにあるなら
+            if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) {
+                // ホットページの中で低速メモリにあるページを選択
+                while(remapping_data_block_table.at(hotness_data_block_address_queue_with_gc.front()).first < fast_memory_capacity_at_data_block_granularity) {
+                    hotness_data_block_address_queue_with_gc.pop(); //高速メモリにあるページはpop
+                    if(hotness_data_block_address_queue_with_gc.empty()) break;
+                }
+                uint64_t hotness_data_block_address; //physical
+                // キューが空なら終了
+                if(hotness_data_block_address_queue_with_gc.empty()) {
+                    break;
+                }
+                else {
+                    hotness_data_block_address = hotness_data_block_address_queue_with_gc.front();
+                }
+
+                RemappingRequest remapping_request;
+                remapping_request.address_in_fm = p_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
+                remapping_request.address_in_sm = hotness_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
+
+                // check
+                if(remapping_data_block_table.at(p_data_block_address).first >= fast_memory_capacity_at_data_block_granularity) {
+                    std::cout << "ERROR:there is a problem about remapping_request(fm)" << std::endl;
+                    abort();
+                }
+                // check
+                if(remapping_data_block_table.at(hotness_data_block_address).first < fast_memory_capacity_at_data_block_granularity) {
+                    std::cout << "ERROR:there is a problem about remapping_request(sm)" << std::endl;
+                    abort();
+                }
+                // check
+                if(remapping_request.address_in_fm == remapping_request.address_in_sm) {
+                    std::cout << "ERROR : remapping_request.address_in_fm == remapping_request.address_in_sm" << std::endl;
+                    abort();
+                }
+
+                // taiga debug
+                static bool first_deb_a = true;
+                if(first_deb_a) {
+                    std::cout << "=========remapping_request.address_in_fm : remapping_request.address_in_sm=========" << std::endl;
+                    first_deb_a = false;
+                }
+                std::cout << remapping_request.address_in_fm << " : " << remapping_request.address_in_sm << std::endl;
+                // taiga debug
+
+                hotness_data_block_address_queue_with_gc.pop();
+                enqueue_remapping_request(remapping_request);
+            }
+        }
+    }
+
+    return true;
+}
+
+
+
 // bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 // {
 //     for(uint64_t i = fast_memory_capacity_at_data_block_granularity; i < total_capacity_at_data_block_granularity; i++) {
@@ -581,5 +684,60 @@ void OS_TRANSPARENT_MANAGEMENT::initialize_hotness_table(std::vector<HOTNESS_WID
         table.at(i) = false;
     }
 }
+#if (GC_TRACE == ENABLE)
+void OS_TRANSPARENT_MANAGEMENT::initialize_hotness_table_with_gc(std::vector<HOTNESS_WIDTH>& table) {
+    uint64_t table_size = table.size();
+    for (uint64_t i = 0;i < table_size; i++) {
+        table.at(i) = false;
+    }
+}
+
+uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
+{
+    uint64_t migration_count_between_gc=0;
+    // queueの中身全てのremappingを行う
+    while(!remapping_request_queue.empty()) {
+        RemappingRequest remapping_request;
+        // remapping_request発行
+        bool issue = issue_remapping_request(remapping_request);
+        // チェック
+        if (issue == false) {
+            std::cout << "ERROR : The remapping request has no content." << std::endl;
+            abort();
+        }
+        // start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
+        // migration_count_between_epochを更新
+        // 片方の有効bitがtrueならmigration回数は1回
+        // 両方の有効bitがtrueならmigration回数は2回
+        uint64_t data_address_in_fm = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
+        uint64_t data_address_in_sm = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
+        if(remapping_data_block_table.at(data_address_in_fm).second == true && remapping_data_block_table.at(data_address_in_sm).second == true) {
+            migration_count_between_gc += 2;
+            // check
+            // if(active_entry_number != 1) {
+            //     std::cout << "ERROR:wrong active_entry_number" << std::endl;
+            // }
+            // active_entry_number += 1;
+        }
+        else {
+            migration_count_between_gc++;
+        }
+
+        // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
+        finish_remapping_request();
+        
+        // initialize_swapping();
+    }
+
+    std::cout << "migration count " << migration_count_between_gc << std::endl; //debug
+
+    // migrationにかかったオーバーヘッドを計算
+    uint64_t migration_cycle_between_gc = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_gc;
+    migration_cycle_between_gc += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_gc;
+    migration_cycle_between_gc += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_gc;    
+
+    return migration_cycle_between_gc;
+}
+#endif // GC_TRACE
 #endif // HISTORY_BASED_PAGE_SELECTION
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT

@@ -67,6 +67,9 @@
 #define NUMBER_OF_BLOCK               (35)
 #endif // BITS_MANIPULATION
 
+#if (GC_TRACE == ENABLE)
+#define HOTNESS_THRESHORD_WITH_GC (1) // gcと同時にマイグレーションするときのhotness閾値
+#endif // GC_TRACE
 class OS_TRANSPARENT_MANAGEMENT
 {
     using channel_type = champsim::channel;
@@ -92,7 +95,13 @@ public:
     std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
     std::vector<HOTNESS_WIDTH>& hotness_table; // A hotness bit for every data block, true -> data block is hot, false -> data block is cold.
 
+
     std::queue<uint64_t> hotness_data_block_address_queue; //hotなアドレスをhotな順に入れる。
+
+#if (GC_TRACE == ENABLE)
+    std::vector<HOTNESS_WIDTH>& hotness_table_with_gc;
+    std::queue<uint64_t> hotness_data_block_address_queue_with_gc;
+#endif //GC_TRACE
 
     /* Remapping request */
     struct RemappingRequest
@@ -200,6 +209,13 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
 //     bool finish_fm_access_in_incomplete_read_request_queue(uint64_t h_address);
 //     bool finish_fm_access_in_incomplete_write_request_queue(uint64_t h_address);
 // #endif // COLOCATED_LINE_LOCATION_TABLE
+
+#if (GC_TRACE == ENABLE)
+    bool choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t>); 
+    bool add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t>);
+    uint64_t migration_all_start_with_gc();
+    void initialize_hotness_table_with_gc(std::vector<HOTNESS_WIDTH>& table);
+#endif // GC_TRACE
 
 private:
     // Evict cold data block
