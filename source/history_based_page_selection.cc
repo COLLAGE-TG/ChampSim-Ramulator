@@ -34,6 +34,7 @@ OS_TRANSPARENT_MANAGEMENT::~OS_TRANSPARENT_MANAGEMENT() //良く考えてない
     delete &counter_table;
     delete &hotness_table;
     delete &remapping_data_block_table;
+    delete &hotness_table_with_gc;
 };
 
 bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramulator::Request::Type type, float queue_busy_degree)
@@ -71,11 +72,11 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
         assert(false);
     }
 
-    epoch_count++;
-    if(epoch_count >= EPOCH_LENGTH) {
+    instr_count++;
+    if(instr_count >= EPOCH_LENGTH) {
         choose_hotpage_with_sort();
         add_new_remapping_request_to_queue(queue_busy_degree);
-        epoch_count = 0;
+        instr_count = 0;
         clear_counter_table_epoch_count++;
         initialize_hotness_table(hotness_table);
     }
@@ -125,6 +126,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
     return true;
 }
 
+#if (GC_MARKED_OBJECT == ENABLE)
 bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t> marked_pages)
 {
     // debug
@@ -152,7 +154,49 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std
 
     return true;
 }
+#else // GC_MARKED_OBJECT
+bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::vector<std::uint64_t> unmarked_pages)
+{
+    std::vector<std::pair<uint64_t, uint64_t>> tmp_pages_and_count(counter_table.size()); //this.first = （physical_data_block_address）, this.second = （counter）
+    // counter_tableを複製
+    for(uint64_t i =0; i < tmp_pages_and_count.size(); i++) {
+        tmp_pages_and_count.at(i).first = i;
+        tmp_pages_and_count.at(i).second = counter_table.at(i);
+    }
 
+    // unmarked_pageならtmp_pages_and_count.at(i).secondの値を0にする。それによってhotness_tableには入らない
+    for(uint64_t i = 0; i < unmarked_pages.size(); i++) {
+        uint64_t tmp_unmarked_page = unmarked_pages.at(i);
+        tmp_pages_and_count.at(tmp_unmarked_page).second = 0;
+    }
+
+    // ペアをsecond要素で降順ソート
+    std::sort(tmp_pages_and_count.begin(), tmp_pages_and_count.end(), [](const auto& a, const auto& b) {
+        return a.second > b.second;
+    });
+
+    // hotness tableを更新
+    for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
+        // check
+        if(i != fast_memory_capacity_at_data_block_granularity-1) {
+            if(tmp_pages_and_count.at(i).second < tmp_pages_and_count.at(i+1).second) {
+                std::cout << "ERROR:tmp_pages_and_count was not sorted." << std::endl;
+                abort();
+            }
+        }
+
+        // カウンターが0なら終了
+        if(tmp_pages_and_count.at(i).second == 0) {
+            break;
+        }
+        uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
+        hotness_table_with_gc.at(tmp_hotpage_data_block_address) = true;
+        hotness_data_block_address_queue_with_gc.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
+    }
+
+    return true;
+}
+#endif // GC_MARKED_OBJECT
 // add_new_remapping_request_to_queue内でswapのためのページを選択
 // remapping_requestを返す
 // 高速メモリ内のページは有効bitが0のものを選ぶ（追加機能：カウンタが0,1,2...(max=min(hotness_count))のやつを選ぶ）
@@ -414,6 +458,19 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
         }
         // コールドページかつ高速メモリにあるなら
         if(counter_table.at(p_data_block_address) < HOTNESS_THRESHORD_WITH_GC) {
+#if (GC_MARKED_OBJECT == DISABLE)
+            // unmarked_pagesならスキップ
+            bool p_data_is_unmarked = false;
+            for(uint64_t i = 0; i < marked_pages.size(); i++) { // marked_pagesはunmarked_pagesです
+                if(p_data_block_address == marked_pages.at(i)) p_data_is_unmarked = true;
+            }
+            if(p_data_is_unmarked) {
+                // debug
+                std::cout << "p_data_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
+                // debug
+                continue;
+            }
+#endif // GC_MARKED_OBJECT
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
             if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) {
@@ -591,16 +648,16 @@ bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
 
 bool OS_TRANSPARENT_MANAGEMENT::epoch_check()
 {   
-    if(epoch_count == EPOCH_LENGTH) return true;
-    else if(epoch_count > EPOCH_LENGTH) { // チェック
+    if(instr_count == EPOCH_LENGTH) return true;
+    else if(instr_count > EPOCH_LENGTH) { // チェック
         std::cout << "epoch_length > EPOCH_LENGTH" << std::endl; 
-        std::cout << "epoch_length = " << epoch_count << std::endl;
+        std::cout << "epoch_length = " << instr_count << std::endl;
         abort();
     }
-    else if(epoch_count < EPOCH_LENGTH) return false;
+    else if(instr_count < EPOCH_LENGTH) return false;
     else { // 通常はここには来ない
             std::cout << "epoch_lengthの値が異常です。" << std::endl; 
-            std::cout << "epoch_length = " << epoch_count << std::endl;
+            std::cout << "epoch_length = " << instr_count << std::endl;
             abort();
     }
 }
@@ -728,6 +785,8 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
         
         // initialize_swapping();
     }
+
+    migration_with_gc_count += migration_count_between_gc;
 
     std::cout << "migration count " << migration_count_between_gc << std::endl; //debug
 

@@ -219,7 +219,7 @@ public:
     static std::string marked_page_file_name;
     std::vector<uint64_t> find_marked_pages();
     uint64_t migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management);
-    
+    uint64_t gc_start_cycle, gc_end_cycle, gc_cycle, migration_cycle;
 #endif //GC_TRACE
 
 
@@ -679,7 +679,7 @@ std::pair<uint64_t, uint8_t> O3_CPU::module_model<B_FLAG, T_FLAG>::impl_btb_pred
 //     return result;
 // }
 
-#endif
+#endif // GC_TRACE
 // taiga added
 
 #else

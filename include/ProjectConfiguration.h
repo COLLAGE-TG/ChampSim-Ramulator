@@ -23,6 +23,8 @@
 
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
+#define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
+#define CHECK_INSTR_ADDRESS (ENABLE) //命令がアクセスする物理アドレスを出力
 
 /** Configuration for hybrid memory systems */
 #if (MEMORY_USE_HYBRID == ENABLE)
@@ -199,7 +201,9 @@ public:
 
     uint64_t swapping_count;
     uint64_t swapping_traffic_in_bytes;
-
+#if (GC_TRACE == ENABLE)
+    uint64_t migration_with_gc_count;
+#endif // GC_TRACE
     uint64_t remapping_request_queue_congestion;
 
 #if (IDEAL_VARIABLE_GRANULARITY == ENABLE)

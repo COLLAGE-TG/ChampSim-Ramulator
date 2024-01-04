@@ -52,6 +52,11 @@ public:
     const std::size_t pt_levels;
     const uint64_t pte_page_size; // Size of a PTE page
 
+    static std::string address_output_file_name; //taiga added
+    bool migration_with_gc_of_vatopa = false;
+    bool migration_with_gc_start; // migration_with_gcの最初を知らせる
+    uint64_t migration_with_gc_count = 1;
+
     // capacity and pg_size are measured in bytes, and capacity must be a multiple of pg_size
     VirtualMemory(uint64_t pg_size, std::size_t page_table_levels, uint64_t minor_penalty, std::size_t memory_size);
     uint64_t shamt(std::size_t level) const;

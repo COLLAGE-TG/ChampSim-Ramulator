@@ -122,8 +122,14 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
         fprintf(file_handler, "load_request_in_memory: %ld, load_request_in_memory2: %ld.\n", load_request_in_memory, load_request_in_memory2);
         fprintf(file_handler, "store_request_in_memory: %ld, store_request_in_memory2: %ld.\n", store_request_in_memory, store_request_in_memory2);
 #endif // TRACKING_LOAD_STORE_STATISTICS
-
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+        fprintf(file_handler, "migration_count: %ld, migration_traffic_in_bytes: %ld.\n", swapping_count, swapping_traffic_in_bytes);
+#else
         fprintf(file_handler, "swapping_count: %ld, swapping_traffic_in_bytes: %ld.\n", swapping_count, swapping_traffic_in_bytes);
+#endif
+#if (GC_TRACE == ENABLE)
+        fprintf(file_handler, "migration_with_gc_count: %ld.\n", migration_with_gc_count);
+#endif
 
         fprintf(file_handler, "remapping_request_queue_congestion: %ld.\n", remapping_request_queue_congestion);
 

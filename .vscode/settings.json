@@ -108,5 +108,5 @@
     "editor.indentSize": "tabSize",
     "editor.formatOnSave": true, // To format when you save your file
     "C_Cpp.clang_format_path": "/usr/bin/clang-format",
-    "cmake.sourceDirectory": "/home/caras/funkytaiga/tmp_champ/ChampSim-Ramulator/vcpkg/buildtrees/cli11/src/v2.3.2-b73d70b8d0.clean/test_package", // The full path of the clang-format executable. For Linux: "/usr/bin/clang-format".
+    "cmake.sourceDirectory": "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/vcpkg/downloads/tools/cmake-3.27.1-linux/cmake-3.27.1-linux-x86_64/share/cmake-3.27/Modules/FortranCInterface", // The full path of the clang-format executable. For Linux: "/usr/bin/clang-format".
 }

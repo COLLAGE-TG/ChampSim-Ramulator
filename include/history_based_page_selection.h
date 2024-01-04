@@ -36,7 +36,7 @@
 #define HOTNESS_DEFAULT_VALUE                 (false)
 
 #define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
-#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1000) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
+#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (100) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (1000) //cycles
@@ -84,7 +84,7 @@ public:
     uint64_t fast_memory_capacity_at_data_block_granularity;
     uint8_t fast_memory_offset_bit; // Address format in the data management granularity
     
-    uint64_t epoch_count = 0; //if epoch_count > epoch_length; スワップを始める 0に初期化する
+    uint64_t instr_count = 0; //if instr_count > epoch_length; スワップを始める 0に初期化する
     uint64_t clear_counter_table_epoch_count = 0;
 #if (TEST_HISTORY_BASED_PAGE_SELECTION == ENABLE) // デバッグ用
     bool first_swap = true;
@@ -101,6 +101,7 @@ public:
 #if (GC_TRACE == ENABLE)
     std::vector<HOTNESS_WIDTH>& hotness_table_with_gc;
     std::queue<uint64_t> hotness_data_block_address_queue_with_gc;
+    uint64_t migration_with_gc_count = 0;
 #endif //GC_TRACE
 
     /* Remapping request */
@@ -211,7 +212,11 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
 // #endif // COLOCATED_LINE_LOCATION_TABLE
 
 #if (GC_TRACE == ENABLE)
+#if (GC_MARKED_OBJECT == ENABLE)
     bool choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t>); 
+#else // GC_MARKED_OBJECT
+    bool choose_hotpage_with_sort_with_gc_unmarked(std::vector<std::uint64_t>);
+#endif // GC_MARKED_OBJECT
     bool add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t>);
     uint64_t migration_all_start_with_gc();
     void initialize_hotness_table_with_gc(std::vector<HOTNESS_WIDTH>& table);

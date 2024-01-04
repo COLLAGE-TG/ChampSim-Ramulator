@@ -26,7 +26,10 @@
 
 #include "ChampSim/champsim.h"
 #include "ChampSim/champsim_constants.h"
-
+#if (CHECK_INSTR_ADDRESS == ENABLE)
+#include <iostream>
+#include <fstream>
+#endif // # CHECK_INSTR_ADDRESS
 #if (USER_CODES == ENABLE)
 
 #if (RAMULATOR == ENABLE)
@@ -81,6 +84,12 @@ void VirtualMemory::ppage_pop() { next_ppage += PAGE_SIZE; }
 
 std::size_t VirtualMemory::available_ppages() const { return (last_ppage - next_ppage) / PAGE_SIZE; }
 
+// taiga debug
+#if (CHECK_INSTR_ADDRESS == ENABLE)
+    std::string VirtualMemory::address_output_file_name = "";
+#endif
+// taiga debug
+
 std::pair<uint64_t, uint64_t> VirtualMemory::va_to_pa(uint32_t cpu_num, uint64_t vaddr)
 {
     auto [ppage, fault] = vpage_to_ppage_map.insert({
@@ -105,6 +114,55 @@ std::pair<uint64_t, uint64_t> VirtualMemory::va_to_pa(uint32_t cpu_num, uint64_t
         fmt::print("[VMEM] {} paddr: {:x} vaddr: {:x} fault: {}\n", __func__, paddr, vaddr, fault);
 #endif // USE_VCPKG
     }
+
+    // taiga debug
+#if (CHECK_INSTR_ADDRESS == ENABLE)
+    static bool first_write_address_check = true;
+    if(migration_with_gc_of_vatopa == false) { //通常のva_to_pa変換ならそのアドレスを出力
+        if(first_write_address_check) {
+            std::ofstream check_address_outputFile(address_output_file_name, std::ios::trunc);
+            if(check_address_outputFile.is_open()) {
+                check_address_outputFile.close();
+            }
+            else {
+                std::cerr << "Error initializing the file.\n";
+                abort();
+            }
+            first_write_address_check = false;
+        }
+        std::ofstream check_address_outputFile(address_output_file_name, std::ios::app);
+
+        if(check_address_outputFile.is_open()) {
+            uint64_t tmp_p_page = paddr >> LOG2_PAGE_SIZE;
+            if(fault) {
+                check_address_outputFile << tmp_p_page << " fault" << "\n";
+            }
+            else {
+                check_address_outputFile << tmp_p_page << "\n";
+            }
+        }
+        else {
+            std::cerr << "Error opening the file.\n";
+        }
+        check_address_outputFile.close();
+    }
+    else { // migration_with_gcの場合
+        if(migration_with_gc_start) {
+            std::ofstream check_address_outputFile(address_output_file_name, std::ios::app);
+
+            if(check_address_outputFile.is_open()) {
+                check_address_outputFile << "migration_with_gc "  << migration_with_gc_count << "回目" << "\n";
+            }
+            else {
+                std::cerr << "Error opening the file.\n";
+            }
+            check_address_outputFile.close();
+            migration_with_gc_count++;
+            migration_with_gc_start = false;
+        }
+    }
+#endif
+    // taiga debug
 
     return {paddr, fault ? minor_fault_penalty : 0};
 }

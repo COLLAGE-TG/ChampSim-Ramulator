@@ -122,6 +122,10 @@ public:
     uint64_t swapping_count;
     uint64_t swapping_traffic_in_bytes;
 
+#if (GC_TRACE == ENABLE)
+    uint64_t migration_with_gc_count;
+#endif // GC_TRACE
+
 #if (TEST_SWAPPING_UNIT == ENABLE)
 #define MEMORY_DATA_NUMBER (128)
     std::array<uint8_t, BLOCK_SIZE> memory_data[MEMORY_DATA_NUMBER] = {0};
@@ -214,6 +218,10 @@ MEMORY_CONTROLLER<T, T2>::MEMORY_CONTROLLER(double freq_scale, double clock_scal
     swapping_count = swapping_traffic_in_bytes = 0;
 #endif // MEMORY_USE_SWAPPING_UNIT
 
+#if (GC_TRACE == ENABLE)
+    migration_with_gc_count = 0;
+#endif // GC_TRACE
+
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
     load_request_in_memory = load_request_in_memory2 = 0;
     store_request_in_memory = store_request_in_memory2 = 0;
@@ -241,6 +249,10 @@ MEMORY_CONTROLLER<T, T2>::~MEMORY_CONTROLLER()
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
     output_statistics.swapping_count            = swapping_count;
     output_statistics.swapping_traffic_in_bytes = swapping_traffic_in_bytes;
+#if (GC_TRACE == ENABLE)
+    migration_with_gc_count = os_transparent_management.migration_with_gc_count;
+    output_statistics.migration_with_gc_count = migration_with_gc_count;
+#endif // GC_TRACE
 #endif // MEMORY_USE_SWAPPING_UNIT
 
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)

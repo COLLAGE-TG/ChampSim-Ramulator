@@ -154,6 +154,41 @@
             "miDebuggerPath": "/usr/bin/gdb" // The path of debugger. e.g., /usr/local/bin/gdb, /usr/bin/gdb
         },
         {
+            "name": "(gdb) Launch for champsim_plus_ramulator with single cores tmp. Trace is gc_marked_object",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/champsim_plus_ramulator", // the executable file's name for debugging
+            // Below are parmeters input into the executable file
+            "args": [
+                "--warmup-instructions",
+                "0", // 1000000
+                "--simulation-instructions",
+                "1000000000",
+                "configs/HBM-config.cfg",
+                "configs/DDR4-config.cfg",
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/test1_0_2000000000.champsim.xz"
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            //"preLaunchTask": "C/C++: g++ build all files",
+            "miDebuggerPath": "/usr/bin/gdb" // The path of debugger. e.g., /usr/local/bin/gdb, /usr/bin/gdb
+        },
+        {
             "name": "(gdb) Launch for champsim_plus_ramulator with single cores tmp. Trace is dpc3 619",
             "type": "cppdbg",
             "request": "launch",

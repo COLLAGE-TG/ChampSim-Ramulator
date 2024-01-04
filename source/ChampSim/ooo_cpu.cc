@@ -463,27 +463,46 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     }
 // taiga added
 #if (GC_TRACE == ENABLE)
-    // debug
-    // print_pte_page_size();
-    // if(rob_entry.is_mark_end == 1) {
-    //     // degug
-    //     // std::cout << "is_mark_end == 1" << std::endl;
-    //     // degug
-    // }
-    // debug
     if(rob_entry.is_gc_rtn_start == 1) {
         // degug
         std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
         // degug
+#if (GC_MARKED_OBJECT == ENABLE)
         std::vector<uint64_t> marked_pages = find_marked_pages();
-        uint64_t migration_cycles = migration_with_gc(marked_pages, os_transparent_management);
+        migration_cycle = migration_with_gc(marked_pages, os_transparent_management);
+#else // GC_MARKED_OBJECT
+        std::vector<uint64_t> unmarked_pages = find_marked_pages(); // find_unmarked_pages()
+        migration_cycle = migration_with_gc(unmarked_pages, os_transparent_management);
+#endif // GC_MARKED_OBJECT
+        
         // uint64_t migration_cycles = memory_controller->migration_with_gc(marked_pages);
-        std::cout << "migration_cycles " << migration_cycles << std::endl; //debug
+        std::cout << "migration_cycle " << migration_cycle << std::endl; //debug
+
+        // GC_start時のcurrent_cycleを記録
+        gc_start_cycle = current_cycle;
     }
     if(rob_entry.is_gc_rtn_end == 1) {
         // degug
         std::cout << "is_gc_rtn_end == 1(ooo_cpu.cc)" << std::endl;
         // degug
+        // サイクル数を計算して修正
+        gc_end_cycle = current_cycle;
+        gc_cycle = gc_end_cycle - gc_start_cycle;
+        // check
+        if(gc_cycle <= 0) {
+            std::cout << "ERROR:gc_cycleが不正な値です" << std::endl;
+            abort();
+        }
+
+        // taiga debug
+        std::cout << "gc_cycle " << gc_cycle << std::endl;
+        // taiga debug
+
+        // サイクル数の調整
+        if(migration_cycle > gc_cycle) {
+            current_cycle = gc_start_cycle + migration_cycle;
+        }
+        // elseは何もしない
     }
     if(rob_entry.is_gc_rtn_sweep_end == 1) {
         // degug
@@ -496,12 +515,18 @@ std::string O3_CPU::marked_page_file_name = "";
 
 std::vector<uint64_t> O3_CPU::find_marked_pages()
 {
-    static int gc_count = 1;
+    static int gc_count = 0;
     std::vector<uint64_t> p_marked_pages = {}, v_marked_pages = {};
     uint64_t v_page_start_address, v_page_end_address;
     uint64_t v_page_start_page, v_page_end_page;
     bool start_end_flag = false; //start address : false, end address : true;
     bool is_there_any_marked_pages = false;
+#if (GC_MARKED_OBJECT == ENABLE)
+#else
+    std::vector<uint64_t> p_unmarked_pages = {}, v_unmarked_pages = {};
+    bool is_there_any_unmarked_pages = false;
+#endif
+
     // ファイル名
     // std::string marked_page_file_name = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_gc_marked_pages_files/sample_marked_pages.txt";
     // taiga debug
@@ -518,7 +543,9 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
     std::string line, pre_line;
     bool read_flag = false;
     // bool full_gc_flag = false;
+#if (GC_MARKED_OBJECT == ENABLE)
     while (std::getline(file_stream, line)) {
+        if(gc_count == 0) break; //最初のGCは参照するmarked_pagesがない
         // std::cout << line << std::endl; // 読み込んだ行を表示
         int gc_count_line; //gc_countをintに変換
         if('0' <= line[0] && line[0] <= '9') {
@@ -626,6 +653,115 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
         pre_line = line;
     }
 
+#else // GC_MARKED_OBJECT
+    while (std::getline(file_stream, line)) {
+        int gc_count_line; //gc_countをintに変換
+        if('0' <= line[0] && line[0] <= '9') {
+            gc_count_line = std::stoi(line);
+        }
+        else {
+            gc_count_line = 999999999; //ありえない値を挿入
+        }
+
+        if(gc_count_line == gc_count) { //対象のマークページを検出
+            read_flag = true;
+            std::getline(file_stream, line);
+            if(line != "GC_start") {
+                std::cout << "ERROR:marked pageのファイルが正しくありません" << std::endl;
+                std::cout << "gc_countの次はGC_STARTです" << std::endl;
+                abort();
+            }
+            // error check
+            // full gc check
+            if(gc_count != 1) {
+                if(pre_line == "FULL_GC_START") {
+                    std::cout << "full gc(ooo_cpu.h)" << std::endl;
+                    // full_gc_flag = true;
+                    break; //full gc なら終了
+                }
+            }
+
+            continue;
+        }
+        if(read_flag) {
+            std::string check_start_end = line.substr(0,6);
+            if(check_start_end == "sta_ad") {
+                is_there_any_unmarked_pages = true; //unmarked pageがあります
+                // error check
+                if(start_end_flag != false) {
+                    std::cout << "ERROR:unmarked pageのファイルが正しくありません" << std::endl;
+                    abort();
+                }
+
+                std::string unmarked_start_address_hex = line.substr(7,20);
+                try {
+                    size_t pos; //デバッグ用
+                    v_page_start_address = std::stoull(unmarked_start_address_hex, &pos, 16);
+
+                    // pos が文字列の長さと一致することを確認（余分な文字がないことを確認）
+                    if (pos == unmarked_start_address_hex.length()) {
+                        std::cout << "変換成功: " << v_page_start_address << std::endl;
+                    } else {
+                        std::cerr << "変換失敗: 不正な文字が存在します" << std::endl;
+                    }
+                } catch (const std::invalid_argument& e) {
+                    std::cerr << "変換失敗: 無効な引数です" << std::endl;
+                } catch (const std::out_of_range& e) {
+                    std::cerr << "変換失敗: 範囲外です" << std::endl;
+                }
+
+                start_end_flag = true; //次はend address
+            }
+            else if(check_start_end == "end_ad") {
+                // error check
+                if(start_end_flag == false) {
+                    std::cout << "ERROR:unmarked pageのファイルが正しくありません" << std::endl;
+                    abort();
+                }
+
+                // end addressを取得
+                std::string unmarked_end_address_hex = line.substr(7,20);
+                try {
+                    size_t pos; //デバッグ用
+                    v_page_end_address = std::stoull(unmarked_end_address_hex, &pos, 16);
+
+                    // pos が文字列の長さと一致することを確認（余分な文字がないことを確認）
+                    if (pos == unmarked_end_address_hex.length()) {
+                        std::cout << "変換成功: " << v_page_end_address << std::endl;
+                    } else {
+                        std::cerr << "変換失敗: 不正な文字が存在します" << std::endl;
+                    }
+                    } catch (const std::invalid_argument& e) {
+                    std::cerr << "変換失敗: 無効な引数です" << std::endl;
+                } catch (const std::out_of_range& e) {
+                    std::cerr << "変換失敗: 範囲外です" << std::endl;
+                }
+
+                // v_unmarked_pagesにマークされたページを追加
+                v_page_start_page = v_page_start_address >> LOG2_PAGE_SIZE;
+                v_page_end_page = v_page_end_address >> LOG2_PAGE_SIZE;
+                // debug
+                std::cout << "v_page_start_page " << v_page_start_page << std::endl;
+                std::cout << "v_page_end_page " << v_page_end_page << std::endl;
+
+                for (uint64_t i = v_page_start_page; i <= v_page_end_page; i++) {
+                    v_unmarked_pages.push_back(i);
+                }
+
+                start_end_flag = false; //次はstart address
+            }
+            else if(check_start_end == "GC_end") {
+                break;
+            }
+            else {
+                std::cout << "ERROR:unmarked pageのファイルが正しくありません" << std::endl;
+                abort();
+            }
+        }
+        pre_line = line;
+    }
+#endif // GC_MARKED_OBJECT
+
     file_stream.close();
 
     // error check
@@ -634,13 +770,23 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
         abort();
     }
 
+#if (GC_MARKED_OBJECT == ENABLE)
     // マークされたページがなかった場合
     if(is_there_any_marked_pages == false) {
         // debug
         std::cout << "Warnig : markされたページがありません" << std::endl;
         // debug
     }
+#else
+// マークされたページがなかった場合
+    if(is_there_any_unmarked_pages == false) {
+        // debug
+        std::cout << "Warnig : unmarkページがありません" << std::endl;
+        // debug
+    }
+#endif
 
+#if (GC_MARKED_OBJECT == ENABLE)
     // vpage to ppage
     for (uint64_t i = 0; i < v_marked_pages.size(); i++) {
         uint64_t v_marked_pages_top_address = v_marked_pages.at(i) << LOG2_PAGE_SIZE;
@@ -655,10 +801,31 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
         std::cout << "p_marked_page " << p_marked_pages.at(i) << std::endl;
         // taiga debug
     }
+#else // GC_MARKED_OBJECT
+    // vpage to ppage
+    vmem->migration_with_gc_start = true;
+    for (uint64_t i = 0; i < v_unmarked_pages.size(); i++) {
+        uint64_t v_unmarked_pages_top_address = v_unmarked_pages.at(i) << LOG2_PAGE_SIZE;
+        
+        vmem->migration_with_gc_of_vatopa = true; // 通常の変換ではないことを知らせる
+        auto [p_unmarked_pages_top_address, check_p_address_is_exist] = vmem->va_to_pa(CPU_0, v_unmarked_pages_top_address); // va_to_paの第一引数変えたほうがいい
+        vmem->migration_with_gc_of_vatopa = false; // 元に戻す
+
+        // すでに仮想アドレスに対応する物理アドレスがあれば、check_p_address_is_exist!=0
+        if(check_p_address_is_exist != 0) {
+            std::cout << "WARNIG : GC時のマイグレーションにおいて、マークされているオブジェクトの仮想アドレスに対応する物理アドレスがありません" << std::endl;
+        }
+        uint64_t p_unmarked_page_address = p_unmarked_pages_top_address >> LOG2_PAGE_SIZE; //ページアドレスに変換
+        p_unmarked_pages.push_back(p_unmarked_page_address); 
+        // taiga debug
+        std::cout << "p_unmarked_page " << p_unmarked_pages.at(i) << std::endl;
+        // taiga debug
+    }
+#endif // GC_MARKED_OBJECT
 
     gc_count = gc_count + 1;
 
-    return p_marked_pages;
+    return p_unmarked_pages;
 }
 
 uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> marked_pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
@@ -666,8 +833,13 @@ uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> marked_pages, OS_T
     // std::cout << "migration_with_gc here" << std::endl;
     // std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
     // std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
+
     // リマッピングリクエスト作成
+#if (GC_MARKED_OBJECT == ENABLE)
     os_transparent_management->choose_hotpage_with_sort_with_gc(marked_pages);
+#else // GC_MARKED_OBJECT
+    os_transparent_management->choose_hotpage_with_sort_with_gc_unmarked(marked_pages);
+#endif // GC_MARKED_OBJECT
     os_transparent_management->add_new_remapping_request_to_queue_with_gc(marked_pages);
     cycles_of_migrations = os_transparent_management->migration_all_start_with_gc();
     os_transparent_management->initialize_hotness_table_with_gc(os_transparent_management->hotness_table_with_gc);

@@ -636,11 +636,17 @@ void simulation_run(const ramulator::Config& configs, ramulator::Memory<T, ramul
     // ".champsim.xz" を ".txt" に置き換え
     size_t dotPos = tmp_marked_page_file_name.find(".champsim.xz");
     if (dotPos != std::string::npos) {
+#if (GC_MARKED_OBJECT == ENABLE)
         tmp_marked_page_file_name.replace(dotPos, std::string::npos, ".txt");
+#else //GC_MARKED_OBJECT
+        tmp_marked_page_file_name.replace(dotPos, std::string::npos, "_unmarked_obj.txt");
+#endif //GC_MARKED_OBJECT
+
     }
     // "tmp_trace" を "tmp_gc" に置き換え
     size_t lastSlashPos = tmp_marked_page_file_name.find_last_of("/");
     if (lastSlashPos != std::string::npos) {
+
         tmp_marked_page_file_name.replace(0, lastSlashPos + 1, "tmp_gc_marked_pages_files/");
     } else {
         // スラッシュが見つからない場合、何もしないかエラーハンドリングが必要です。
@@ -652,6 +658,31 @@ void simulation_run(const ramulator::Config& configs, ramulator::Memory<T, ramul
     std::cout << "tmp_marked_page_file_name.txt : " << tmp_marked_page_file_name << std::endl; 
     // taiga debug
     O3_CPU::marked_page_file_name = tmp_marked_page_file_name;
+#endif // GC_TRACE
+#if (CHECK_INSTR_ADDRESS == ENABLE)
+    std::string tmp_address_output_file_name = input_parameter.trace_names[0];
+    // ".champsim.xz" を ".txt" に置き換え
+    size_t dotPos_check_address = tmp_address_output_file_name.find(".champsim.xz");
+    if (dotPos_check_address != std::string::npos) {
+        tmp_address_output_file_name.replace(dotPos_check_address, std::string::npos, "_check_address.txt");
+    }
+
+    // "tmp_trace" を "check_address" に置き換え
+    size_t lastSlashPos_check_address = tmp_address_output_file_name.find_last_of("/");
+    if (lastSlashPos_check_address != std::string::npos) {
+
+        tmp_address_output_file_name.replace(0, lastSlashPos_check_address + 1, "check_address/");
+    } else {
+        // スラッシュが見つからない場合、何もしないかエラーハンドリングが必要です。
+        std::cerr << "Error: ファイルパスにスラッシュが含まれていません。" << std::endl;
+        abort();
+    }
+    // taiga debug
+    std::cout << "tmp_address_output_file_name.txt : " << tmp_address_output_file_name << std::endl; 
+    // taiga debug
+
+    VirtualMemory::address_output_file_name = tmp_address_output_file_name;
+
 #endif
 // taiga added
 
