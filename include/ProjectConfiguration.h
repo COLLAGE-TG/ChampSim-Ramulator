@@ -24,7 +24,7 @@
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 #define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
-#define GC_MIGRATION_WITH_GC       (DISABLE)
+#define GC_MIGRATION_WITH_GC       (ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
 #endif

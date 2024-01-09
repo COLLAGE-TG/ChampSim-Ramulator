@@ -30,7 +30,7 @@
 
 using trace_instr_format_t = input_instr;
 
-#if (GC_MIGRATION_WITH_GC==ENABLE)
+#if (GC_TRACE==ENABLE)
 
 // #define GC_START "signal_gc_start"
 #define GC_START "GC_stopped_mark"
@@ -137,14 +137,14 @@ void WriteCurrentInstruction()
   // taiga debug
 }
 
-void BranchOrNot(UINT32 taken)
+void BranchOrNot(UINT64 taken)
 {
   curr_instr.is_branch = 1;
   curr_instr.branch_taken = taken;
 }
 
 template <typename T>
-void WriteToSet(T* begin, T* end, UINT32 r)
+void WriteToSet(T* begin, T* end, UINT64 r)
 {
   auto set_end = std::find(begin, end, 0);
   auto found_reg = std::find(begin, set_end, r); // check to see if this register is already in the list
@@ -253,30 +253,30 @@ VOID Image(IMG img, VOID* v)
           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
 
         // instrument register reads
-        UINT32 readRegCount = INS_MaxNumRRegs(ins);
-        for (UINT32 i = 0; i < readRegCount; i++)
+        UINT64 readRegCount = INS_MaxNumRRegs(ins);
+        for (UINT64 i = 0; i < readRegCount; i++)
         {
-          UINT32 regNum = INS_RegR(ins, i);
+          UINT64 regNum = INS_RegR(ins, i);
           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
                         IARG_PTR, curr_instr.source_registers, IARG_PTR, curr_instr.source_registers + NUM_INSTR_SOURCES,
-                        IARG_UINT32, regNum, IARG_END);
+                        IARG_UINT64, regNum, IARG_END);
         }
 
         // instrument register writes
-        UINT32 writeRegCount = INS_MaxNumWRegs(ins);
-        for (UINT32 i = 0; i < writeRegCount; i++)
+        UINT64 writeRegCount = INS_MaxNumWRegs(ins);
+        for (UINT64 i = 0; i < writeRegCount; i++)
         {
-          UINT32 regNum = INS_RegW(ins, i);
+          UINT64 regNum = INS_RegW(ins, i);
           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
                         IARG_PTR, curr_instr.destination_registers, IARG_PTR, curr_instr.destination_registers + NUM_INSTR_DESTINATIONS,
-                        IARG_UINT32, regNum, IARG_END);
+                        IARG_UINT64, regNum, IARG_END);
         }
 
         // instrument memory reads and writes
-        UINT32 memOperands = INS_MemoryOperandCount(ins);
+        UINT64 memOperands = INS_MemoryOperandCount(ins);
 
         // Iterate over each memory operand of the instruction.
-        for (UINT32 memOp = 0; memOp < memOperands; memOp++)
+        for (UINT64 memOp = 0; memOp < memOperands; memOp++)
         {
           if (INS_MemoryOperandIsRead(ins, memOp))
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
@@ -396,7 +396,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#else //GC_MIGRATION_WITH_GC
+#else // GC_TRACE
 
 /* ================================================================== */
 // Global variables 
@@ -476,14 +476,14 @@ void WriteCurrentInstruction()
 
 }
 
-void BranchOrNot(UINT32 taken)
+void BranchOrNot(UINT64 taken)
 {
   curr_instr.is_branch = 1;
   curr_instr.branch_taken = taken;
 }
 
 template <typename T>
-void WriteToSet(T* begin, T* end, UINT32 r)
+void WriteToSet(T* begin, T* end, UINT64 r)
 {
   auto set_end = std::find(begin, end, 0);
   auto found_reg = std::find(begin, set_end, r); // check to see if this register is already in the list
@@ -511,30 +511,30 @@ VOID Instruction(INS ins, VOID* v)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)BranchOrNot, IARG_BRANCH_TAKEN, IARG_END);
 
   // instrument register reads
-  UINT32 readRegCount = INS_MaxNumRRegs(ins);
-  for (UINT32 i = 0; i < readRegCount; i++)
+  UINT64 readRegCount = INS_MaxNumRRegs(ins);
+  for (UINT64 i = 0; i < readRegCount; i++)
   {
-    UINT32 regNum = INS_RegR(ins, i);
+    UINT64 regNum = INS_RegR(ins, i);
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
                    IARG_PTR, curr_instr.source_registers, IARG_PTR, curr_instr.source_registers + NUM_INSTR_SOURCES,
-                   IARG_UINT32, regNum, IARG_END);
+                   IARG_UINT64, regNum, IARG_END);
   }
 
   // instrument register writes
-  UINT32 writeRegCount = INS_MaxNumWRegs(ins);
-  for (UINT32 i = 0; i < writeRegCount; i++)
+  UINT64 writeRegCount = INS_MaxNumWRegs(ins);
+  for (UINT64 i = 0; i < writeRegCount; i++)
   {
-    UINT32 regNum = INS_RegW(ins, i);
+    UINT64 regNum = INS_RegW(ins, i);
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned char>,
                    IARG_PTR, curr_instr.destination_registers, IARG_PTR, curr_instr.destination_registers + NUM_INSTR_DESTINATIONS,
-                   IARG_UINT32, regNum, IARG_END);
+                   IARG_UINT64, regNum, IARG_END);
   }
 
   // instrument memory reads and writes
-  UINT32 memOperands = INS_MemoryOperandCount(ins);
+  UINT64 memOperands = INS_MemoryOperandCount(ins);
 
   // Iterate over each memory operand of the instruction.
-  for (UINT32 memOp = 0; memOp < memOperands; memOp++)
+  for (UINT64 memOp = 0; memOp < memOperands; memOp++)
   {
     if (INS_MemoryOperandIsRead(ins, memOp))
       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)WriteToSet<unsigned long long int>,
@@ -597,4 +597,4 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#endif //GC_MIGRATION_WITH_GC
+#endif // GC_TRACE

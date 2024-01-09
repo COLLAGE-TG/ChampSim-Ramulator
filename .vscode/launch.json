@@ -224,10 +224,10 @@
             "miDebuggerPath": "/usr/bin/gdb" // The path of debugger. e.g., /usr/local/bin/gdb, /usr/bin/gdb
         },
         {
-            "name": "(gdb) ./test1.out for test1.c",
+            "name": "(gdb) ./test4.out for test4.c",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tmp_benchmark/./test1.out", // the executable file's name for debugging
+            "program": "${workspaceFolder}/tmp_benchmark/ex_files/./test4.out", // the executable file's name for debugging
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],

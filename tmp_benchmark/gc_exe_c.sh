@@ -5,7 +5,7 @@
 # 実行例
 # bash gc_exe_c.sh {filename}
 SAMPLE_FILENAME=$1
-
+SAMPLE_FILENAME_NO_DOT="${SAMPLE_FILENAME%.*}"
 # GC_ROOT=/home/funkytaiga/tools/gc-8.2.2
 GC_ROOT=/home/funkytaiga/tools
 # GC_ROOT=/home/funkytaiga/ChampSim_Ramulator
