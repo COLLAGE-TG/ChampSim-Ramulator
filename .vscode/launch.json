@@ -163,10 +163,10 @@
                 "--warmup-instructions",
                 "0", // 1000000
                 "--simulation-instructions",
-                "1000000000",
+                "9000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
-                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/test1_0_2000000000.champsim.xz"
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/test4_0_10000.champsim.xz"
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",

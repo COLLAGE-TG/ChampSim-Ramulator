@@ -127,9 +127,9 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
 #else
         fprintf(file_handler, "swapping_count: %ld, swapping_traffic_in_bytes: %ld.\n", swapping_count, swapping_traffic_in_bytes);
 #endif
-#if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
         fprintf(file_handler, "migration_with_gc_count: %ld.\n", migration_with_gc_count);
-#endif
+#endif // GC_MIGRATION_WITH_GC
 
         fprintf(file_handler, "remapping_request_queue_congestion: %ld.\n", remapping_request_queue_congestion);
 

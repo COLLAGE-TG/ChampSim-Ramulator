@@ -127,28 +127,6 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
 
         // Transform bytes into trace format instructions
         std::memcpy(std::data(trace_read_buf), std::data(raw_buf), bytes_read);
-        // taiga debug
-        // trace_read_buf.at(0).ip = 100000000;
-        // trace_read_buf.at(0).is_branch = 1;
-        // trace_read_buf.at(0).destination_registers[0] = '2';
-        // trace_read_buf.at(0).source_registers[0] = '3';
-        // trace_read_buf.at(0).destination_memory[0] = '1';
-        // trace_read_buf.at(0).source_memory[0] = '4';
-
-        // trace_read_buf.at(0).is_gc_rtn_start = 1;
-        // trace_read_buf.at(0).is_gc_rtn_end = 1;
-        // trace_read_buf.at(0).is_mark_end = 0;
-
-        // trace_read_buf.at(1).ip = 100000000;
-        // trace_read_buf.at(0).destination_registers[0] = '4';
-        // trace_read_buf.at(0).source_registers[0] = '6';
-        // trace_read_buf.at(0).destination_memory[0] = '7';
-        // trace_read_buf.at(0).source_memory[0] = '9';
-
-        // trace_read_buf.at(1).is_gc_rtn_start = 1;
-        // trace_read_buf.at(1).is_gc_rtn_end = 0;
-        // trace_read_buf.at(1).is_mark_end = 0;
-        // taiga debug
 
 
         // Inflate trace format into core model instructions
@@ -158,6 +136,7 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
         std::transform(begin, end, std::back_inserter(instr_buffer), [cpu = this->cpu](T t)
             { return ooo_model_instr {cpu, t}; });
 #if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
         // taiga debug
         // static int debug_inst_flag = 1;
         // if(debug_inst_flag == 1) {
@@ -189,6 +168,7 @@ ooo_model_instr bulk_tracereader<T, F>::operator()()
         //     }
         // }
         // taiga debug
+#endif
 #endif // GC_TRACE
         // Set branch targets
         set_branch_targets(std::begin(instr_buffer), std::end(instr_buffer));

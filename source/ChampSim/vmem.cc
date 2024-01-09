@@ -92,6 +92,17 @@ std::size_t VirtualMemory::available_ppages() const { return (last_ppage - next_
 
 std::pair<uint64_t, uint64_t> VirtualMemory::va_to_pa(uint32_t cpu_num, uint64_t vaddr)
 {
+    // taiga added
+    if(migration_with_gc_of_vatopa) { // migration_with_gcから呼び出されたなら
+        auto tmp_check = vpage_to_ppage_map.find({cpu_num, vaddr >> LOG2_PAGE_SIZE});
+        if(tmp_check == vpage_to_ppage_map.end()) {
+            // taiga debug
+            std::cout << "このGCオブジェクトはメモリに存在しません。（va_ro_pa）" << std::endl;
+            // taiga debug
+            return {0, 0}; // paddrが0。migration_with_gcから呼び出された場合、paddr0。
+        }
+    }
+    // taiga added
     auto [ppage, fault] = vpage_to_ppage_map.insert({
         {cpu_num, vaddr >> LOG2_PAGE_SIZE},
         ppage_front()
@@ -135,10 +146,12 @@ std::pair<uint64_t, uint64_t> VirtualMemory::va_to_pa(uint32_t cpu_num, uint64_t
         if(check_address_outputFile.is_open()) {
             uint64_t tmp_p_page = paddr >> LOG2_PAGE_SIZE;
             if(fault) {
-                check_address_outputFile << tmp_p_page << " fault" << "\n";
+                check_address_outputFile << "0x" << std::hex << vaddr << " v_address" << " fault" << std::endl;
+                check_address_outputFile << tmp_p_page << " p_page_address" << "\n";
             }
             else {
-                check_address_outputFile << tmp_p_page << "\n";
+                check_address_outputFile << vaddr << "v_address" << std::endl;
+                check_address_outputFile << tmp_p_page << " p_page_address" << "\n";
             }
         }
         else {

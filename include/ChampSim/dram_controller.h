@@ -123,7 +123,9 @@ public:
     uint64_t swapping_traffic_in_bytes;
 
 #if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     uint64_t migration_with_gc_count;
+#endif
 #endif // GC_TRACE
 
 #if (TEST_SWAPPING_UNIT == ENABLE)
@@ -219,7 +221,9 @@ MEMORY_CONTROLLER<T, T2>::MEMORY_CONTROLLER(double freq_scale, double clock_scal
 #endif // MEMORY_USE_SWAPPING_UNIT
 
 #if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     migration_with_gc_count = 0;
+#endif
 #endif // GC_TRACE
 
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
@@ -250,8 +254,10 @@ MEMORY_CONTROLLER<T, T2>::~MEMORY_CONTROLLER()
     output_statistics.swapping_count            = swapping_count;
     output_statistics.swapping_traffic_in_bytes = swapping_traffic_in_bytes;
 #if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     migration_with_gc_count = os_transparent_management.migration_with_gc_count;
     output_statistics.migration_with_gc_count = migration_with_gc_count;
+#endif
 #endif // GC_TRACE
 #endif // MEMORY_USE_SWAPPING_UNIT
 
@@ -1259,9 +1265,12 @@ void MEMORY_CONTROLLER<T, T2>::migration_all_start()
     }
 #endif //TEST_HISTORY_BASED_PAGE_SELECTION
 
+#if (TEST_HISTORY_WITH_GC == ENABLE)
+    std::cout << "migration_count_between_epoch " << migration_count_between_epoch << std::endl;
+#endif // TEST_HISTORY_WITH_GC
     // migrationにかかったオーバーヘッドを追加
     current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_epoch;
-    current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_epoch;
+    // current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_epoch;
     current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_epoch;    
 }
 // // swap操作は全てこの関数で完結させる

@@ -92,8 +92,30 @@ phase_stats do_phase(phase_info phase, environment& env, std::vector<tracereader
         {
             auto& trace = traces.at(trace_index.at(cpu.cpu));
             for (auto pkt_count = cpu.IN_QUEUE_SIZE - static_cast<long>(std::size(cpu.input_queue)); ! trace.eof() && pkt_count > 0; --pkt_count) {
-#if (GC_TRACE==ENABLE) 
+#if (GC_MIGRATION_WITH_GC==ENABLE) 
+#if (PRINT_V_ADDRESS_TRACE == ENABLE)
 //              // taiga debug
+                auto instr = trace();
+                std::ofstream output_file_pva_trace("/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address_trace.txt", std::ios::app);
+                if(!output_file_pva_trace.is_open()) {
+                    std::cerr << "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address_trace.txtが開けませんでした。" << std::endl;
+                    abort();
+                }
+
+                for(long unsigned int i = 0; i < instr.source_memory.size(); i++) {
+                    output_file_pva_trace << instr.source_memory.at(i) << " source memory(store)" << std::endl;
+                    if(i != 0) {
+                        output_file_pva_trace << "souce memory has two elements(store)" << std::endl;
+                    }
+                }
+                for(long unsigned int i = 0; i < instr.destination_memory.size(); i++) {
+                    output_file_pva_trace << instr.destination_memory.at(i) << " destination_memory(store)" << std::endl;
+                    if(i != 0) {
+                        output_file_pva_trace << "destination_memory has two elements(store)" << std::endl;
+                    }
+                }
+
+                output_file_pva_trace.close();
                 // if(trace().is_branch == 1) {
                 //     std::cout << "===================================" << std::endl;
                 //     std::cout << "champsim.cc : is_branch == 1" << std::endl;
@@ -138,7 +160,8 @@ phase_stats do_phase(phase_info phase, environment& env, std::vector<tracereader
                 //     std::cout << "==============" << std::endl;
                 // }
 //              // taiga debug
-#endif // GC_TRACE
+#endif // PRINT_V_ADDRESS_TRACE
+#endif // GC_MIGRATION_WITH_GC
                 // cpu.input_queue.push_back(tmp_trace);
                 cpu.input_queue.push_back(trace());
             }

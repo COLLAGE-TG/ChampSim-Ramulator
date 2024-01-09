@@ -447,14 +447,22 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 
     // Mark LQ entries as ready to translate
     for (auto& lq_entry : LQ)
-        if (lq_entry.has_value() && lq_entry->instr_id == rob_entry.instr_id)
+        if (lq_entry.has_value() && lq_entry->instr_id == rob_entry.instr_id){
             lq_entry->event_cycle = current_cycle + (warmup ? 0 : EXEC_LATENCY);
-
+#if (PRINT_V_ADDRESS == ENABLE) // for debug
+            // print_lq_v_address(rob_entry);
+#endif // PRINT_V_ADDRESS
+        }
+            
     // Mark SQ entries as ready to translate
     for (auto& sq_entry : SQ)
-        if (sq_entry.instr_id == rob_entry.instr_id)
+        if (sq_entry.instr_id == rob_entry.instr_id) {
             sq_entry.event_cycle = current_cycle + (warmup ? 0 : EXEC_LATENCY);
-
+#if (PRINT_V_ADDRESS == ENABLE) // debug
+            // print_sq_v_address(rob_entry);
+#endif // PRINT_V_ADDRESS
+        }
+        
     if constexpr (champsim::debug_print)
     {
 #if (USE_VCPKG == ENABLE)
@@ -462,7 +470,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 #endif // USE_VCPKG
     }
 // taiga added
-#if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     if(rob_entry.is_gc_rtn_start == 1) {
         // degug
         std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
@@ -777,14 +785,14 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
         std::cout << "Warnig : markされたページがありません" << std::endl;
         // debug
     }
-#else
+#else // GC_MARKED_OBJECT
 // マークされたページがなかった場合
     if(is_there_any_unmarked_pages == false) {
         // debug
         std::cout << "Warnig : unmarkページがありません" << std::endl;
         // debug
     }
-#endif
+#endif // GC_MARKED_OBJECT
 
 #if (GC_MARKED_OBJECT == ENABLE)
     // vpage to ppage
@@ -811,44 +819,66 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
         auto [p_unmarked_pages_top_address, check_p_address_is_exist] = vmem->va_to_pa(CPU_0, v_unmarked_pages_top_address); // va_to_paの第一引数変えたほうがいい
         vmem->migration_with_gc_of_vatopa = false; // 元に戻す
 
-        // すでに仮想アドレスに対応する物理アドレスがあれば、check_p_address_is_exist!=0
-        if(check_p_address_is_exist != 0) {
+        // すでに仮想アドレスに対応する物理アドレスがあれば、p_unmarked_pages_top_address!=0
+        if(p_unmarked_pages_top_address == 0) {
             std::cout << "WARNIG : GC時のマイグレーションにおいて、マークされているオブジェクトの仮想アドレスに対応する物理アドレスがありません" << std::endl;
         }
-        uint64_t p_unmarked_page_address = p_unmarked_pages_top_address >> LOG2_PAGE_SIZE; //ページアドレスに変換
-        p_unmarked_pages.push_back(p_unmarked_page_address); 
-        // taiga debug
-        std::cout << "p_unmarked_page " << p_unmarked_pages.at(i) << std::endl;
-        // taiga debug
+        else { // unmarked_pagesがPTEに登録されていた場合（メモリに存在する場合）
+            uint64_t p_unmarked_page_address = p_unmarked_pages_top_address >> LOG2_PAGE_SIZE; //ページアドレスに変換
+            p_unmarked_pages.push_back(p_unmarked_page_address); 
+            // taiga debug
+            std::cout << "p_unmarked_page_address " << p_unmarked_page_address << std::endl;
+            // taiga debug
+        }
     }
 #endif // GC_MARKED_OBJECT
 
     gc_count = gc_count + 1;
-
+#if (GC_MARKED_OBJECT == ENABLE)
+    return p_marked_pages;
+#else // GC_MARKED_OBJECT
     return p_unmarked_pages;
+#endif // GC_MARKED_OBJECT
 }
 
-uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> marked_pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
+uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
     uint64_t cycles_of_migrations = 0;
     // std::cout << "migration_with_gc here" << std::endl;
     // std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
     // std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
 
+    // taiga debug
+#if (TEST_HISTORY_WITH_GC == ENABLE)
+    // pagesを出力する。GC時に(un)markされているオブジェクトの先頭アドレスの中でva_to_paに登録されているページを確認
+    if(pages.size() == 0) {
+        std::cout << "(un)markされているオブジェクトでvpage_to_ppageに登録されているものはありません。" << std::endl;
+    }
+    else {
+        std::cout << "(un)markされているオブジェクトの先頭アドレスで、vpage_to_ppageに登録されているもの" << std::endl;
+        for(uint64_t i = 0; i < pages.size(); i++) {
+            std::cout << pages.at(i) << std::endl;
+        }
+    }
+    
+#endif // TEST_HISTORY_WITH_GC
+    // taiga debug
+
     // リマッピングリクエスト作成
 #if (GC_MARKED_OBJECT == ENABLE)
-    os_transparent_management->choose_hotpage_with_sort_with_gc(marked_pages);
+    os_transparent_management->choose_hotpage_with_sort_with_gc(pages);
 #else // GC_MARKED_OBJECT
-    os_transparent_management->choose_hotpage_with_sort_with_gc_unmarked(marked_pages);
+    os_transparent_management->choose_hotpage_with_sort_with_gc_unmarked(pages);
 #endif // GC_MARKED_OBJECT
-    os_transparent_management->add_new_remapping_request_to_queue_with_gc(marked_pages);
+    os_transparent_management->add_new_remapping_request_to_queue_with_gc(pages);
     cycles_of_migrations = os_transparent_management->migration_all_start_with_gc();
     os_transparent_management->initialize_hotness_table_with_gc(os_transparent_management->hotness_table_with_gc);
 
     return cycles_of_migrations;
+
+#endif // GC_MIGRATION_WITH_GC
+// taiga added
 }
 
-#endif // GC_TRACE
-// taiga added
 void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
 {
     // load
@@ -978,6 +1008,16 @@ bool O3_CPU::do_complete_store(const LSQ_ENTRY& sq_entry)
 #endif // USE_VCPKG
     }
 
+// #if (PRINT_V_ADDRESS == ENABLE) // debug
+//     std::ofstream output_file_pva("/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt", std::ios::app);
+//     if(!output_file_pva.is_open()) {
+//         std::cerr << "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txtが開けませんでした。" << std::endl;
+//         abort();
+//     }
+//     output_file_pva << "0x" << std::hex << data_packet.v_address << std::dec << " (write)" << std::endl;
+//     output_file_pva.close();
+// #endif //debug
+
     return L1D_bus.issue_write(data_packet);
 }
 
@@ -994,6 +1034,16 @@ bool O3_CPU::execute_load(const LSQ_ENTRY& lq_entry)
         fmt::print("[LQ] {} instr_id: {} vaddr: {:#x}\n", __func__, data_packet.instr_id, data_packet.v_address);
 #endif // USE_VCPKG
     }
+
+// #if (PRINT_V_ADDRESS == ENABLE) // debug
+//     std::ofstream output_file_pva("/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt", std::ios::app);
+//         if(!output_file_pva.is_open()) {
+//             std::cerr << "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txtが開けませんでした。" << std::endl;
+//             abort();
+//         }
+//         output_file_pva << "0x" << std::hex << data_packet.v_address << std::dec << " (load)" << std::endl;
+//         output_file_pva.close();
+// #endif //debug
 
     return L1D_bus.issue_read(data_packet);
 }
@@ -1211,3 +1261,50 @@ bool CacheBus::issue_write(request_type data_packet)
 
     return lower_level->add_wq(data_packet);
 }
+
+#if (PRINT_V_ADDRESS == ENABLE) // debug
+    void O3_CPU::print_lq_v_address(ooo_model_instr& instr){
+        std::ofstream output_file_pva("/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt", std::ios::app);
+        if(!output_file_pva.is_open()) {
+            std::cerr << "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txtが開けませんでした。" << std::endl;
+            abort();
+        }
+
+        for(int i = 0; i < instr.source_memory.size(); i++) {
+            output_file_pva << instr.source_memory.at(i) << " source memory(load)" << std::endl;
+            if(i != 0) {
+                output_file_pva << "souce memory has two elements(load)" << std::endl;
+            }
+        }
+        for(int i = 0; i < instr.destination_memory.size(); i++) {
+            output_file_pva << instr.destination_memory.at(i) << " destination_memory(load)" << std::endl;
+            if(i != 0) {
+                output_file_pva << "destination_memory has two elements(load)" << std::endl;
+            }
+        }
+
+        output_file_pva.close();
+    }
+    void O3_CPU::print_sq_v_address(ooo_model_instr& instr){
+        std::ofstream output_file_pva("/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt", std::ios::app);
+        if(!output_file_pva.is_open()) {
+            std::cerr << "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txtが開けませんでした。" << std::endl;
+            abort();
+        }
+
+        for(long unsigned int i = 0; i < instr.source_memory.size(); i++) {
+            output_file_pva << instr.source_memory.at(i) << " source memory(store)" << std::endl;
+            if(i != 0) {
+                output_file_pva << "souce memory has two elements(store)" << std::endl;
+            }
+        }
+        for(int i = 0; i < instr.destination_memory.size(); i++) {
+            output_file_pva << instr.destination_memory.at(i) << " destination_memory(store)" << std::endl;
+            if(i != 0) {
+                output_file_pva << "destination_memory has two elements(store)" << std::endl;
+            }
+        }
+
+        output_file_pva.close();
+    }
+#endif // PRINT_V_ADDRESS

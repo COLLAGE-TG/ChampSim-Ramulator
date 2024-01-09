@@ -4,6 +4,7 @@
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
 OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint64_t fast_memory_max_address)
 : total_capacity(max_address), fast_memory_capacity(fast_memory_max_address),
   total_capacity_at_data_block_granularity(max_address >> DATA_MANAGEMENT_OFFSET_BITS),
@@ -13,6 +14,16 @@ OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint6
   hotness_table(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))),
   hotness_table_with_gc(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))), // taiga added
   remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
+#else
+OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint64_t fast_memory_max_address)
+: total_capacity(max_address), fast_memory_capacity(fast_memory_max_address),
+  total_capacity_at_data_block_granularity(max_address >> DATA_MANAGEMENT_OFFSET_BITS),
+  fast_memory_capacity_at_data_block_granularity(fast_memory_max_address >> DATA_MANAGEMENT_OFFSET_BITS),
+  fast_memory_offset_bit(champsim::lg2(fast_memory_max_address)), // Note here only support integers of 2's power.
+  counter_table(*(new std::vector<COUNTER_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, COUNTER_DEFAULT_VALUE))),
+  hotness_table(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))),
+  remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
+#endif
 {
     hotness_threshold                            = HOTNESS_THRESHOLD; //まずは1に設定しよう
     remapping_request_queue_congestion           = 0;
@@ -23,7 +34,6 @@ OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint6
         remapping_data_block_table.at(i).first = i;
         remapping_data_block_table.at(i).second = false;
     }
-
     printf("hotness threshold = %d\n", hotness_threshold);
 };
 
@@ -34,7 +44,9 @@ OS_TRANSPARENT_MANAGEMENT::~OS_TRANSPARENT_MANAGEMENT() //良く考えてない
     delete &counter_table;
     delete &hotness_table;
     delete &remapping_data_block_table;
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     delete &hotness_table_with_gc;
+#endif
 };
 
 bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramulator::Request::Type type, float queue_busy_degree)
@@ -114,8 +126,8 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
             }
         }
 
-        // カウンターが0なら終了
-        if(tmp_pages_and_count.at(i).second == 0) {
+        // カウンターがHOTNESS_THRESHOLD 以下なら終了
+        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD) {
             break;
         }
         uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
@@ -126,6 +138,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
     return true;
 }
 
+#if (GC_MIGRATION_WITH_GC == ENABLE)
 #if (GC_MARKED_OBJECT == ENABLE)
 bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t> marked_pages)
 {
@@ -185,8 +198,8 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
             }
         }
 
-        // カウンターが0なら終了
-        if(tmp_pages_and_count.at(i).second == 0) {
+        // カウンターがHOTNESS_THRESHORD_WITH_GC以下なら終了
+        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHORD_WITH_GC) {
             break;
         }
         uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
@@ -197,6 +210,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
     return true;
 }
 #endif // GC_MARKED_OBJECT
+#endif // GC_MIGRATION_WITH_GC
 // add_new_remapping_request_to_queue内でswapのためのページを選択
 // remapping_requestを返す
 // 高速メモリ内のページは有効bitが0のものを選ぶ（追加機能：カウンタが0,1,2...(max=min(hotness_count))のやつを選ぶ）
@@ -441,6 +455,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
     return true;
 }
 
+#if (GC_MIGRATION_WITH_GC == ENABLE)
 bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t> marked_pages)
 {
     // GCを行うときに用いるadd_remapping_request
@@ -526,7 +541,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
     return true;
 }
 
-
+#endif //GC_MIGRATION_WITH_GC
 
 // bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 // {
@@ -741,7 +756,7 @@ void OS_TRANSPARENT_MANAGEMENT::initialize_hotness_table(std::vector<HOTNESS_WID
         table.at(i) = false;
     }
 }
-#if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
 void OS_TRANSPARENT_MANAGEMENT::initialize_hotness_table_with_gc(std::vector<HOTNESS_WIDTH>& table) {
     uint64_t table_size = table.size();
     for (uint64_t i = 0;i < table_size; i++) {
@@ -788,15 +803,15 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
 
     migration_with_gc_count += migration_count_between_gc;
 
-    std::cout << "migration count " << migration_count_between_gc << std::endl; //debug
+    std::cout << "migration count with gc " << migration_count_between_gc << std::endl; //debug
 
     // migrationにかかったオーバーヘッドを計算
     uint64_t migration_cycle_between_gc = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_gc;
-    migration_cycle_between_gc += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_gc;
+    // migration_cycle_between_gc += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_gc;
     migration_cycle_between_gc += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_gc;    
 
     return migration_cycle_between_gc;
 }
-#endif // GC_TRACE
+#endif // GC_MIGRATION_WITH_GC
 #endif // HISTORY_BASED_PAGE_SELECTION
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT

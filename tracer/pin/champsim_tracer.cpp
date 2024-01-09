@@ -30,7 +30,7 @@
 
 using trace_instr_format_t = input_instr;
 
-#if (GC_TRACE==ENABLE)
+#if (GC_MIGRATION_WITH_GC==ENABLE)
 
 // #define GC_START "signal_gc_start"
 #define GC_START "GC_stopped_mark"
@@ -99,13 +99,18 @@ BOOL ShouldWrite()
 
 void WriteCurrentInstruction()
 {
+// taiga debug
+  // std::cout << "============(WriteCurrentInstruction)============" << std::endl;
+  // std::cout << "ip " << curr_instr.ip << std::endl;
+  // std::cout << "source_memory " << curr_instr.source_memory[0] << std::endl;
+  // std::cout << "destination_memory " << curr_instr.destination_memory[0] << std::endl;
+// taiga debug
   typename decltype(outfile)::char_type buf[sizeof(trace_instr_format_t)];
   std::memcpy(buf, &curr_instr, sizeof(trace_instr_format_t));
   outfile.write(buf, sizeof(trace_instr_format_t)); //curr_instrのデータをbufに渡す。curr_instrには.ip, .is_branchなどの値がある。
 
   // std::cout << "=======================================================" << std::endl;
-  // std::cout << "=======================================================" << std::endl;
-  // std::cout << "============(WriteCurrentInstruction)============" << std::endl;
+
   // static int writecount=0;
   // if(writecount >= 10000) {
   //    std::cout << "(WriteCurrentInstruction)" << std::endl;
@@ -117,18 +122,18 @@ void WriteCurrentInstruction()
   // if(curr_instr.is_branch==1) {
   //   std::cout << "(WriteCurrentInstruction) curr_instr.is_branch==1" << std::endl;
   // }
-  if(curr_instr.is_gc_rtn_start==1) {
-    std::cout << "(WriteCurrentInstruction) curr_instr.is_gc_rtn_start==1" << std::endl;
-  }
-  if(curr_instr.is_gc_rtn_end==1) {
-    std::cout << "(WriteCurrentInstruction) curr_instr.is_gc_rtn_end==1" << std::endl;
-  }
-  if(curr_instr.is_mark_end!=0) {
-    std::cout << "(WriteCurrentInstruction) curr_instr.is_mark_end!=0" << std::endl;
-  }
-  if(curr_instr.is_gc_rtn_sweep_end==1) {
-    std::cout << "(WriteCurrentInstruction) curr_instr.is_gc_rtn_sweep_end==1" << std::endl;
-  }
+  // if(curr_instr.is_gc_rtn_start==1) {
+  //   std::cout << "(WriteCurrentInstruction) curr_instr.is_gc_rtn_start==1" << std::endl;
+  // }
+  // if(curr_instr.is_gc_rtn_end==1) {
+  //   std::cout << "(WriteCurrentInstruction) curr_instr.is_gc_rtn_end==1" << std::endl;
+  // }
+  // if(curr_instr.is_mark_end!=0) {
+  //   std::cout << "(WriteCurrentInstruction) curr_instr.is_mark_end!=0" << std::endl;
+  // }
+  // if(curr_instr.is_gc_rtn_sweep_end==1) {
+  //   std::cout << "(WriteCurrentInstruction) curr_instr.is_gc_rtn_sweep_end==1" << std::endl;
+  // }
   // taiga debug
 }
 
@@ -151,40 +156,40 @@ void WriteToSet(T* begin, T* end, UINT32 r)
 /* ===================================================================== */
 VOID Print_rtn_start(CHAR* name)
 {
-  std::cout << "====================" << "Print_rtn_start" << "====================" << std::endl;
+  // std::cout << "====================" << "Print_rtn_start" << "====================" << std::endl;
   curr_instr.is_gc_rtn_start = 1;
   
   // taiga debug
-  UINT64 diff_instrCount = instrCount - pre_instrCount;
-  pre_instrCount = instrCount;
-  std::cout << "Diff instruction(Print_rtn_start) " << diff_instrCount << std::endl;
+  // UINT64 diff_instrCount = instrCount - pre_instrCount;
+  // pre_instrCount = instrCount;
+  // std::cout << "Diff instruction(Print_rtn_start) " << diff_instrCount << std::endl;
   // taiga debug
 
 }
 
 VOID Print_rtn_end(CHAR* name)
 {
-  std::cout << "====================" << "Print_rtn_end" << "====================" << std::endl;
+  // std::cout << "====================" << "Print_rtn_end" << "====================" << std::endl;
   curr_instr.is_gc_rtn_end = 1;
   // std::cout << "==================curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << "============" << std::endl;
 }
 
 VOID Print_rtn_mark_end(CHAR* name)
 {
-  std::cout << "====================" << " is_mark_end " << name << "====================" << std::endl;
+  // std::cout << "====================" << " is_mark_end " << name << "====================" << std::endl;
   curr_instr.is_mark_end = 1;
   // std::cout << "==================curr_instr.is_mark_end " << curr_instr.is_mark_end << std::endl;
 
   // taiga debug
-  UINT64 diff_instrCount_for_mark_end = instrCount - pre_instrCount_for_mark_end;
-  pre_instrCount_for_mark_end = instrCount;
-  std::cout << "Diff instruction(Print_rtn_mark_end) " << diff_instrCount_for_mark_end << std::endl;
+  // UINT64 diff_instrCount_for_mark_end = instrCount - pre_instrCount_for_mark_end;
+  // pre_instrCount_for_mark_end = instrCount;
+  // std::cout << "Diff instruction(Print_rtn_mark_end) " << diff_instrCount_for_mark_end << std::endl;
   // taiga debug
 }
 
 VOID Print_rtn_sweep_end(CHAR* name)
 {
-  std::cout << "====================" << "Print_rtn_sweep_end" << "====================" << std::endl;
+  // std::cout << "====================" << "Print_rtn_sweep_end" << "====================" << std::endl;
   curr_instr.is_gc_rtn_sweep_end = 1;
   // std::cout << "==================curr_instr.is_gc_rtn_end " << curr_instr.is_gc_rtn_end << "============" << std::endl;
 }
@@ -208,7 +213,7 @@ VOID Image(IMG img, VOID* v)
     {
 
       // taiga debug
-      bool rtn_main = false;
+      // bool rtn_main = false;
       // taiga debug
 
       bool rtn_is_gc = false;
@@ -220,9 +225,9 @@ VOID Image(IMG img, VOID* v)
       RTN_Open(rtn);
 
       // taiga debug
-      if(RTN_Name(rtn) == "main") {
-        rtn_main = true;
-      }
+      // if(RTN_Name(rtn) == "main") {
+      //   rtn_main = true;
+      // }
       // taiga debug
 
       // GC_START rtn
@@ -284,20 +289,20 @@ VOID Image(IMG img, VOID* v)
         }
 
         // taiga debug
-        if(rtn_main) {
-          if(INS_IsRet(ins)) {
-            std::cout << "Finded main return" << std::endl;
-            INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_inscount, IARG_END);
-            rtn_main = false;
-          }
-        }
+        // if(rtn_main) {
+        //   if(INS_IsRet(ins)) {
+        //     // std::cout << "Finded main return" << std::endl;
+        //     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_inscount, IARG_END);
+        //     rtn_main = false;
+        //   }
+        // }
         // taiga debug
 
         if (rtn_is_gc == true) {
           // GC_STARTの開始なら
           if(rtn_is_gc_start == true) {
             // taiga debug
-            std::cout << "====================" << "Finded GC_start_rtn " << GC_START << "====================" << std::endl;
+            // std::cout << "====================" << "Finded GC_start_rtn " << GC_START << "====================" << std::endl;
             // taiga debug
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_rtn_start, IARG_ADDRINT, GC_START, IARG_END);
             rtn_is_gc_start = false;
@@ -306,7 +311,7 @@ VOID Image(IMG img, VOID* v)
           if(INS_IsRet(ins))
           {
             // taiga debug
-            std::cout << "====================" << "Finded GC_end_rtn " << GC_START << "====================" << std::endl;
+            // std::cout << "====================" << "Finded GC_end_rtn " << GC_START << "====================" << std::endl;
             // taiga debug
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_rtn_end, IARG_ADDRINT, GC_START, IARG_END);
             rtn_is_gc = false;
@@ -315,7 +320,7 @@ VOID Image(IMG img, VOID* v)
         // MARK_ENDなら（正常に動いていない可能性がある）
         if(rtn_is_mark_end == true) {
           // taiga debug
-          std::cout << "====================" << "Finded mark_end " << GC_MARK_END << "====================" << std::endl;
+          // std::cout << "====================" << "Finded mark_end " << GC_MARK_END << "====================" << std::endl;
           // taiga debug
           INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_rtn_mark_end, IARG_ADDRINT, GC_MARK_END, IARG_END);
           rtn_is_mark_end = false;
@@ -325,7 +330,7 @@ VOID Image(IMG img, VOID* v)
           if(INS_IsRet(ins))
           {
             // taiga debug
-            std::cout << "====================" << "Finded GC_sweep_end " << GC_SWEEP_END << "====================" << std::endl;
+            // std::cout << "====================" << "Finded GC_sweep_end " << GC_SWEEP_END << "====================" << std::endl;
             // taiga debug
             INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)Print_rtn_sweep_end, IARG_ADDRINT, GC_SWEEP_END, IARG_END);
             rtn_is_sweep = false;
@@ -391,7 +396,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#else //GC_TRACE
+#else //GC_MIGRATION_WITH_GC
 
 /* ================================================================== */
 // Global variables 
@@ -457,6 +462,14 @@ BOOL ShouldWrite()
 
 void WriteCurrentInstruction()
 {
+
+  // taiga debug
+  std::cout << "============(WriteCurrentInstruction not GC_TRACE)============" << std::endl;
+  std::cout << "ip " << curr_instr.ip << std::endl;
+  std::cout << "source_memory " << curr_instr.source_memory << std::endl;
+  std::cout << "destination_memory " << curr_instr.destination_memory << std::endl;
+// taiga debug
+
   typename decltype(outfile)::char_type buf[sizeof(trace_instr_format_t)];
   std::memcpy(buf, &curr_instr, sizeof(trace_instr_format_t));
   outfile.write(buf, sizeof(trace_instr_format_t)); //curr_instrのデータをbufに渡す。curr_instrには.ip, .is_branchなどの値がある。
@@ -584,4 +597,4 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#endif //GC_TRACE
+#endif //GC_MIGRATION_WITH_GC

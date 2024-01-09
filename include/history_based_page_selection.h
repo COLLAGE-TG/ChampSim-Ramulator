@@ -39,9 +39,9 @@
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (100) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
 // overheads
-#define OVERHEAD_OF_MIGRATION_PER_PAGE        (1000) //cycles
-#define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
-#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (1000) //cycles
+#define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
+// #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
+#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (20000) //cycles
 
 #define REMAPPING_LOCATION_WIDTH              uint8_t
 #define REMAPPING_LOCATION_WIDTH_BITS         (3) // Default: 3
@@ -67,9 +67,9 @@
 #define NUMBER_OF_BLOCK               (35)
 #endif // BITS_MANIPULATION
 
-#if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
 #define HOTNESS_THRESHORD_WITH_GC (1) // gcと同時にマイグレーションするときのhotness閾値
-#endif // GC_TRACE
+#endif // GC_MIGRATION_WITH_GC
 class OS_TRANSPARENT_MANAGEMENT
 {
     using channel_type = champsim::channel;
@@ -98,11 +98,11 @@ public:
 
     std::queue<uint64_t> hotness_data_block_address_queue; //hotなアドレスをhotな順に入れる。
 
-#if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     std::vector<HOTNESS_WIDTH>& hotness_table_with_gc;
     std::queue<uint64_t> hotness_data_block_address_queue_with_gc;
     uint64_t migration_with_gc_count = 0;
-#endif //GC_TRACE
+#endif // GC_MIGRATION_WITH_GC
 
     /* Remapping request */
     struct RemappingRequest
@@ -210,8 +210,8 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
 //     bool finish_fm_access_in_incomplete_read_request_queue(uint64_t h_address);
 //     bool finish_fm_access_in_incomplete_write_request_queue(uint64_t h_address);
 // #endif // COLOCATED_LINE_LOCATION_TABLE
-
-#if (GC_TRACE == ENABLE)
+#if(GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
 #if (GC_MARKED_OBJECT == ENABLE)
     bool choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t>); 
 #else // GC_MARKED_OBJECT
@@ -220,8 +220,8 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
     bool add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t>);
     uint64_t migration_all_start_with_gc();
     void initialize_hotness_table_with_gc(std::vector<HOTNESS_WIDTH>& table);
+#endif // GC_MIGRATION_WITH_GC
 #endif // GC_TRACE
-
 private:
     // Evict cold data block
     bool cold_data_eviction(uint64_t source_address, float queue_busy_degree);

@@ -24,7 +24,15 @@
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 #define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
-#define CHECK_INSTR_ADDRESS (ENABLE) //命令がアクセスする物理アドレスを出力
+#define GC_MIGRATION_WITH_GC       (DISABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+#define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
+#endif
+/** taiga debug */
+#define CHECK_INSTR_ADDRESS (DISABLE) //命令がアクセスする物理アドレスを出力
+#define PRINT_V_ADDRESS (DISABLE) //仮想アドレスを出力（失敗）
+#define PRINT_V_ADDRESS_TRACE (DISABLE) //仮想アドレスを出力
+#define TEST_HISTORY_WITH_GC (ENABLE) // unmarked_pagesを出力, マイグレーションページを出力, gc with マイグレーションページを出力
 
 /** Configuration for hybrid memory systems */
 #if (MEMORY_USE_HYBRID == ENABLE)
@@ -202,7 +210,9 @@ public:
     uint64_t swapping_count;
     uint64_t swapping_traffic_in_bytes;
 #if (GC_TRACE == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE)
     uint64_t migration_with_gc_count;
+#endif // GC_MIGRATION_WITH_GC
 #endif // GC_TRACE
     uint64_t remapping_request_queue_congestion;
 
