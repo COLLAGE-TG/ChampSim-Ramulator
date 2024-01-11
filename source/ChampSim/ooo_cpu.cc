@@ -480,7 +480,16 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         migration_cycle = migration_with_gc(marked_pages, os_transparent_management);
 #else // GC_MARKED_OBJECT
         std::vector<uint64_t> unmarked_pages = find_marked_pages(); // find_unmarked_pages()
-        migration_cycle = migration_with_gc(unmarked_pages, os_transparent_management);
+        // hotness_data_block_address_queueをクリアする
+        while(!os_transparent_management->hotness_data_block_address_queue.empty()) {
+            os_transparent_management->hotness_data_block_address_queue.pop();
+        }
+        // remapping_request_queueをクリアする
+        while(!os_transparent_management->remapping_request_queue.empty()) {
+            os_transparent_management->remapping_request_queue.pop_front();
+        }
+        std::thread thread2([this, unmarked_pages] {migration_cycle = migration_with_gc(unmarked_pages, os_transparent_management); });
+        thread2.join();
 #endif // GC_MARKED_OBJECT
         
         // uint64_t migration_cycles = memory_controller->migration_with_gc(marked_pages);
@@ -528,8 +537,9 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
     uint64_t v_page_start_address, v_page_end_address;
     uint64_t v_page_start_page, v_page_end_page;
     bool start_end_flag = false; //start address : false, end address : true;
-    bool is_there_any_marked_pages = false;
+    
 #if (GC_MARKED_OBJECT == ENABLE)
+    bool is_there_any_marked_pages = false;
 #else
     std::vector<uint64_t> p_unmarked_pages = {}, v_unmarked_pages = {};
     bool is_there_any_unmarked_pages = false;

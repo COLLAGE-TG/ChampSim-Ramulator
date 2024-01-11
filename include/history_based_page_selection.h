@@ -67,9 +67,6 @@
 #define NUMBER_OF_BLOCK               (35)
 #endif // BITS_MANIPULATION
 
-#if (GC_MIGRATION_WITH_GC == ENABLE)
-#define HOTNESS_THRESHORD_WITH_GC (1) // gcと同時にマイグレーションするときのhotness閾値
-#endif // GC_MIGRATION_WITH_GC
 class OS_TRANSPARENT_MANAGEMENT
 {
     using channel_type = champsim::channel;

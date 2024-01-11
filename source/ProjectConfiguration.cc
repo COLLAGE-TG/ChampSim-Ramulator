@@ -51,12 +51,31 @@ void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t numbe
     }
     benchmark_names.erase(benchmark_names.size() - 1);
 
+    // taiga added
+#if (GC_MARKED_OBJECT == ENABLE)
+    benchmark_names += "marked_";
+#else
+    benchmark_names += "_unmarked";
+#endif
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+    benchmark_names += "_gcmigration";
+#endif
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+    benchmark_names += "_epoch_";
+    benchmark_names += std::to_string(EPOCH_LENGTH);
+    benchmark_names += "_cleartable_";
+    benchmark_names += std::to_string(CLEAR_COUNTER_TABLE_EPOCH_NUM);
+#endif
+    // taiga added
+
     // append file_extension to benchmark_names.
-    benchmark_names += file_extension.c_str();
+    // benchmark_names += file_extension.c_str();
+    benchmark_names += file_extension;
 
     // taiga added
-    output_file_path_statistic += benchmark_names.c_str();
-    benchmark_names = output_file_path_statistic;
+    std::string tmp_output_file_path_statistic = output_file_path_statistic;
+    tmp_output_file_path_statistic += benchmark_names.c_str();
+    benchmark_names = tmp_output_file_path_statistic;
     // taiga added
 
     file_handler = fopen(benchmark_names.c_str(), "w");
@@ -123,12 +142,21 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
         fprintf(file_handler, "store_request_in_memory: %ld, store_request_in_memory2: %ld.\n", store_request_in_memory, store_request_in_memory2);
 #endif // TRACKING_LOAD_STORE_STATISTICS
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-        fprintf(file_handler, "migration_count: %ld, migration_traffic_in_bytes: %ld.\n", swapping_count, swapping_traffic_in_bytes);
+        migration_cycles = (OVERHEAD_OF_MIGRATION_PER_PAGE + OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE) * swapping_count;
+        fprintf(file_handler, "migration_count: %ld, migration_traffic_in_bytes: %ld migration_cycles %ld.\n", swapping_count, swapping_traffic_in_bytes, migration_cycles);
 #else
         fprintf(file_handler, "swapping_count: %ld, swapping_traffic_in_bytes: %ld.\n", swapping_count, swapping_traffic_in_bytes);
 #endif
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-        fprintf(file_handler, "migration_with_gc_count: %ld.\n", migration_with_gc_count);
+        migration_cycles_with_gc = (OVERHEAD_OF_MIGRATION_PER_PAGE + OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE) * migration_with_gc_count;
+        fprintf(file_handler, "migration_with_gc_count: %ld migration_cycles_with_gc %ld.\n", migration_with_gc_count, migration_cycles_with_gc);        
+#endif // GC_MIGRATION_WITH_GC
+
+#if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
+        fprintf(file_handler, "HOTNESS_THRESHOLD: %u.\n", HOTNESS_THRESHOLD);
+#endif
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+        fprintf(file_handler, "HOTNESS_THRESHOLD_WITH_GC: %u.\n", HOTNESS_THRESHOLD_WITH_GC);        
 #endif // GC_MIGRATION_WITH_GC
 
         fprintf(file_handler, "remapping_request_queue_congestion: %ld.\n", remapping_request_queue_congestion);

@@ -104,6 +104,10 @@ bool OS_TRANSPARENT_MANAGEMENT::memory_activity_tracking(uint64_t address, ramul
 
 bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort() 
 {
+    // hotness_data_block_address_queueを初期化
+    while(!hotness_data_block_address_queue.empty()) {
+        hotness_data_block_address_queue.pop();
+    }
     std::vector<std::pair<uint64_t, uint64_t>> tmp_pages_and_count(counter_table.size()); //this.first = （physical_data_block_address）, this.second = （counter）
     // counter_tableを複製
     for(uint64_t i =0; i < tmp_pages_and_count.size(); i++) {
@@ -140,12 +144,16 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
 
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #if (GC_MARKED_OBJECT == ENABLE)
-bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t> marked_pages)
+bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std::uint64_t> marked_or_unmarked_pages)
 {
+    // hotness_data_block_address_queue_with_gcを初期化
+    while(!hotness_data_block_address_queue_with_gc.empty()) {
+        hotness_data_block_address_queue_with_gc.pop();
+    }
     // debug
     std::cout << "=============marked pages : count===============" << std::endl;
-    for(uint64_t i = 0; i < marked_pages.size(); i++) {
-        uint64_t curr_p_page = marked_pages.at(i);
+    for(uint64_t i = 0; i < marked_or_unmarked_pages.size(); i++) {
+        uint64_t curr_p_page = marked_or_unmarked_pages.at(i);
         // check
         if(curr_p_page < 0 || curr_p_page >=total_capacity_at_data_block_granularity) {
             std::cout << "marked_pagesのアドレスが不正な値です" << std::endl;
@@ -155,7 +163,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std
         std::cout << curr_p_page << " : " << counter_table.at(curr_p_page) << std::endl;
         // taiga debug
         // curr_p_pageがHOTNESSかどうか判断
-        if(counter_table.at(curr_p_page) >= HOTNESS_THRESHORD_WITH_GC) {
+        if(counter_table.at(curr_p_page) >= HOTNESS_THRESHOLD_WITH_GC) {
             // hotness tableを更新
             hotness_table_with_gc.at(curr_p_page) = true;
             hotness_data_block_address_queue_with_gc.push(curr_p_page);
@@ -170,6 +178,11 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std
 #else // GC_MARKED_OBJECT
 bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::vector<std::uint64_t> unmarked_pages)
 {
+    // hotness_data_block_address_queue_with_gcを初期化
+    while(!hotness_data_block_address_queue_with_gc.empty()) {
+        hotness_data_block_address_queue_with_gc.pop();
+    }
+
     std::vector<std::pair<uint64_t, uint64_t>> tmp_pages_and_count(counter_table.size()); //this.first = （physical_data_block_address）, this.second = （counter）
     // counter_tableを複製
     for(uint64_t i =0; i < tmp_pages_and_count.size(); i++) {
@@ -178,9 +191,15 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
     }
 
     // unmarked_pageならtmp_pages_and_count.at(i).secondの値を0にする。それによってhotness_tableには入らない
+    // debug
+    std::cout << "==============print unmarked pages=============" << std::endl;
+    // debug
     for(uint64_t i = 0; i < unmarked_pages.size(); i++) {
         uint64_t tmp_unmarked_page = unmarked_pages.at(i);
         tmp_pages_and_count.at(tmp_unmarked_page).second = 0;
+        // debug
+        std::cout << tmp_unmarked_page << std::endl;
+        // debug
     }
 
     // ペアをsecond要素で降順ソート
@@ -198,13 +217,16 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
             }
         }
 
-        // カウンターがHOTNESS_THRESHORD_WITH_GC以下なら終了
-        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHORD_WITH_GC) {
+        // カウンターがHOTNESS_THRESHOLD_WITH_GC以下なら終了
+        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD_WITH_GC) {
             break;
         }
         uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
         hotness_table_with_gc.at(tmp_hotpage_data_block_address) = true;
         hotness_data_block_address_queue_with_gc.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
+        // debug
+        std::cout << "tmp_hotpage_data_block_address " << tmp_hotpage_data_block_address << "(choose_hotpage_with_sort_with_gc_unmarked)" << std::endl;
+        // debug
     }
 
     return true;
@@ -250,73 +272,77 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
     // hotness_data_block_address_queueのページを高速メモリに移動させるためのremapping_request発行
     // 片方の有効bitがtrueならmigration回数は1回
     // 両方の有効bitがtrueならmigration回数は2回
+    
     // 有効bitがfalseのページを低速メモリへ
-    for(uint64_t p_data_block_address = 0; p_data_block_address < total_capacity_at_data_block_granularity; p_data_block_address++) {
-        // キューが空なら終了
-        if(hotness_data_block_address_queue.empty()) {
-            break;
-        }
-        // 高速メモリ内のデータで有効bitがfalseなら
-        if(remapping_data_block_table.at(p_data_block_address).second == false) {
-            uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
-            // 高速メモリにあるなら
-            if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) { 
-                // ホットページの中で低速メモリにあるページを選択
-                while(remapping_data_block_table.at(hotness_data_block_address_queue.front()).first < fast_memory_capacity_at_data_block_granularity) {
-                    hotness_data_block_address_queue.pop(); //高速メモリにあるホットページはpop
-                    if(hotness_data_block_address_queue.empty()) break;
-                }
+    // for(uint64_t p_data_block_address = 0; p_data_block_address < total_capacity_at_data_block_granularity; p_data_block_address++) {
+    //     // キューが空なら終了
+    //     if(hotness_data_block_address_queue.empty()) {
+    //         break;
+    //     }
+    //     // 高速メモリ内のデータで有効bitがfalseなら
+    //     if(remapping_data_block_table.at(p_data_block_address).second == false) {
+    //         uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
+    //         // 高速メモリにあるなら
+    //         if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) { 
+    //             // ホットページの中で低速メモリにあるページを選択
+    //             while(remapping_data_block_table.at(hotness_data_block_address_queue.front()).first < fast_memory_capacity_at_data_block_granularity) {
+    //                 hotness_data_block_address_queue.pop(); //高速メモリにあるホットページはpop
+    //                 if(hotness_data_block_address_queue.empty()) break;
+    //             }
 
-                uint64_t hotness_data_block_address;
-                // キューが空なら終了
-                if(hotness_data_block_address_queue.empty()) {
-                    break;
-                }
-                else {
-                    hotness_data_block_address = hotness_data_block_address_queue.front();
-                }
+    //             uint64_t hotness_data_block_address;
+    //             // キューが空なら終了
+    //             if(hotness_data_block_address_queue.empty()) {
+    //                 break;
+    //             }
+    //             else {
+    //                 hotness_data_block_address = hotness_data_block_address_queue.front();
+    //             }
 
-                RemappingRequest remapping_request;
-                remapping_request.address_in_fm = p_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
-                remapping_request.address_in_sm = hotness_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
+    //             RemappingRequest remapping_request;
+    //             remapping_request.address_in_fm = p_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
+    //             remapping_request.address_in_sm = hotness_data_block_address << DATA_MANAGEMENT_OFFSET_BITS;
                 
-                // check
-                if(remapping_data_block_table.at(p_data_block_address).first >= fast_memory_capacity_at_data_block_granularity) {
-                    std::cout << "ERROR:there is a problem about remapping_request(fm)" << std::endl;
-                    abort();
-                }
-                // check
-                if(remapping_data_block_table.at(hotness_data_block_address).first < fast_memory_capacity_at_data_block_granularity) {
-                    std::cout << "ERROR:there is a problem about remapping_request(sm)" << std::endl;
-                    abort();
-                }
-                // check
-                if(remapping_request.address_in_fm == remapping_request.address_in_sm) {
-                    std::cout << "ERROR : remapping_request.address_in_fm == remapping_request.address_in_sm" << std::endl;
-                    abort();
-                }
+    //             // check
+    //             if(remapping_data_block_table.at(p_data_block_address).first >= fast_memory_capacity_at_data_block_granularity) {
+    //                 std::cout << "ERROR:there is a problem about remapping_request(fm)" << std::endl;
+    //                 abort();
+    //             }
+    //             // check
+    //             if(remapping_data_block_table.at(hotness_data_block_address).first < fast_memory_capacity_at_data_block_granularity) {
+    //                 std::cout << "ERROR:there is a problem about remapping_request(sm)" << std::endl;
+    //                 abort();
+    //             }
+    //             // check
+    //             if(remapping_request.address_in_fm == remapping_request.address_in_sm) {
+    //                 std::cout << "ERROR : remapping_request.address_in_fm == remapping_request.address_in_sm" << std::endl;
+    //                 abort();
+    //             }
 
-                hotness_data_block_address_queue.pop();
-                if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
-                {
-                    enqueue_remapping_request(remapping_request);
-                }
-                else {
-                    std::cout << "WARNING : remapping request queue is full" << std::endl;
-                    break;
-                }
+    //             hotness_data_block_address_queue.pop();
+    //             if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
+    //             {
+    //                 enqueue_remapping_request(remapping_request);
+    //             }
+    //             else {
+    //                 std::cout << "WARNING : remapping request queue is full" << std::endl;
+    //                 break;
+    //             }
 
-            }
-        }
-    }
+    //         }
+    //     }
+    // }
     // ホットではないページを低速メモリへ
     for(uint64_t p_data_block_address = 0; p_data_block_address < total_capacity_at_data_block_granularity; p_data_block_address++) {
         // キューが空なら終了
         if(hotness_data_block_address_queue.empty()) {
             break;
         }
+        if(hotness_table.at(p_data_block_address) == true) { //hotpageはスルー
+            continue;
+        }
         // コールドページかつ高速メモリにあるなら移動
-        if(hotness_table.at(p_data_block_address) == false) {
+        if(counter_table.at(p_data_block_address) < HOTNESS_THRESHOLD) {
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
             if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) { 
@@ -332,6 +358,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                 }
                 else {
                     hotness_data_block_address = hotness_data_block_address_queue.front();
+                    hotness_data_block_address_queue.pop();
                 }
 
                 RemappingRequest remapping_request;
@@ -354,7 +381,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                     abort();
                 }
 
-                hotness_data_block_address_queue.pop();
+                
                 if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
                 {
                     enqueue_remapping_request(remapping_request);
@@ -456,7 +483,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
 }
 
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t> marked_pages)
+bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::vector<std::uint64_t> marked_or_unmarked_pages)
 {
     // GCを行うときに用いるadd_remapping_request
     // ================================migration ver================================
@@ -471,21 +498,24 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
         if(hotness_data_block_address_queue_with_gc.empty()) {
             break;
         }
-        // コールドページかつ高速メモリにあるなら
-        if(counter_table.at(p_data_block_address) < HOTNESS_THRESHORD_WITH_GC) {
 #if (GC_MARKED_OBJECT == DISABLE)
-            // unmarked_pagesならスキップ
-            bool p_data_is_unmarked = false;
-            for(uint64_t i = 0; i < marked_pages.size(); i++) { // marked_pagesはunmarked_pagesです
-                if(p_data_block_address == marked_pages.at(i)) p_data_is_unmarked = true;
+        // unmarked_pagesならスキップ
+        bool p_data_is_unmarked = false;
+        for(uint64_t i = 0; i < marked_or_unmarked_pages.size(); i++) {
+            if(p_data_block_address == marked_or_unmarked_pages.at(i)) {
+                p_data_is_unmarked = true;
+                break;
             }
-            if(p_data_is_unmarked) {
-                // debug
-                std::cout << "p_data_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
-                // debug
-                continue;
-            }
+        }
+        if(p_data_is_unmarked) {
+            // debug
+            std::cout << "p_data_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
+            // debug
+            continue;
+        }
 #endif // GC_MARKED_OBJECT
+        // コールドページかつ高速メモリにあるなら
+        if(counter_table.at(p_data_block_address) < HOTNESS_THRESHOLD_WITH_GC) {
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
             if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) {
@@ -493,6 +523,26 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
                 while(remapping_data_block_table.at(hotness_data_block_address_queue_with_gc.front()).first < fast_memory_capacity_at_data_block_granularity) {
                     hotness_data_block_address_queue_with_gc.pop(); //高速メモリにあるページはpop
                     if(hotness_data_block_address_queue_with_gc.empty()) break;
+#if (GC_MARKED_OBJECT == DISABLE)
+                    if(remapping_data_block_table.at(hotness_data_block_address_queue_with_gc.front()).first >= fast_memory_capacity_at_data_block_granularity) {
+                        // unmarked_pagesならスキップ
+                        bool hotness_data_block_is_unmarked = false;
+                        uint64_t tmp_hotness_data_block_address = hotness_data_block_address_queue_with_gc.front(); //physical
+                        for(uint64_t i = 0; i < marked_or_unmarked_pages.size(); i++) {
+                            if(tmp_hotness_data_block_address == marked_or_unmarked_pages.at(i)) {
+                                hotness_data_block_is_unmarked = true;
+                                break;
+                            }
+                        }
+                        if(hotness_data_block_is_unmarked) {
+                            // debug
+                            std::cout << "hotness_data_block_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
+                            // debug
+                            hotness_data_block_address_queue_with_gc.pop(); //unmarked pageなのでpop
+                            continue;
+                        }
+                    }
+#endif // GC_MARKED_OBJECT
                 }
                 uint64_t hotness_data_block_address; //physical
                 // キューが空なら終了
@@ -501,6 +551,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
                 }
                 else {
                     hotness_data_block_address = hotness_data_block_address_queue_with_gc.front();
+                    hotness_data_block_address_queue_with_gc.pop();
                 }
 
                 RemappingRequest remapping_request;
@@ -531,8 +582,6 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
                 }
                 std::cout << remapping_request.address_in_fm << " : " << remapping_request.address_in_sm << std::endl;
                 // taiga debug
-
-                hotness_data_block_address_queue_with_gc.pop();
                 enqueue_remapping_request(remapping_request);
             }
         }
@@ -542,47 +591,6 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
 }
 
 #endif //GC_MIGRATION_WITH_GC
-
-// bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
-// {
-//     for(uint64_t i = fast_memory_capacity_at_data_block_granularity; i < total_capacity_at_data_block_granularity; i++) {
-//         // 低速メモリにあるホットページを発見
-//         if(hotness_table.at(i) == true) {
-//             uint64_t tmp_h_data_block_address = remapping_data_block_table.at(i);
-//             uint64_t tmp_hotpage_data_block_address_in_sm = i;
-//             uint64_t tmp_coldpage_data_block_address_in_fm;
-//             bool is_there_coldpage_in_fm = false;
-//             // 高速メモリにあるコールドページを検索
-//             for(uint64_t j = 0; j < fast_memory_capacity_at_data_block_granularity; j++) {
-//                 if(hotness_table.at(j) == false) {
-//                     is_there_coldpage_in_fm = true;
-//                     tmp_coldpage_data_block_address_in_fm = j;
-//                     RemappingRequest remapping_request;
-//                     remapping_request.address_in_fm = tmp_coldpage_data_block_address_in_fm << DATA_MANAGEMENT_OFFSET_BITS;
-//                     remapping_request.address_in_sm = tmp_hotpage_data_block_address_in_sm << DATA_MANAGEMENT_OFFSET_BITS;
-//                     // counter_tableも入れ替え
-//                     int8_t tmp_counter = counter_table.at(i);
-//                     counter_table.at(i) = counter_table.at(j);
-//                     counter_table.at(j) = tmp_counter;
-//                     // hotness_tableも入れ替え
-//                     hotness_table.at(j) = true; //これからhotpageが入るのでhotに変更
-//                     hotness_table.at(i) = false; //coldpageが入るので変更
-//                     if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
-//                     {
-//                         enqueue_remapping_request(remapping_request);
-//                     }
-//                     break;
-//                 }
-//             }
-//             // 高速メモリにコールドページがない場合、スワップ終了
-//             if(!is_there_coldpage_in_fm) {
-//                 std::cout << "All fast memory pages are hot" << std::endl;
-//                 break;
-//             }
-//         }
-//     }
-//     return true;
-// }
 
 void OS_TRANSPARENT_MANAGEMENT::physical_to_hardware_address(request_type& packet)
 {
@@ -628,7 +636,10 @@ bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
         }
         if(remapping_data_block_table.at(data_block_address_in_sm).first < fast_memory_capacity_at_data_block_granularity) {
             std::cout << "ERROR:data_block_address_in_sm is not in sm." << std::endl;
-            abort();
+            std::cout << "remapping_request.address_in_fm " << remapping_request.address_in_fm << "remapping_request.address_in_sm " << remapping_request.address_in_sm << std::endl;
+            std::cout << "data_block_address_in_sm " << data_block_address_in_sm << std::endl;
+            std::cout << "remapping_data_block_table.at(data_block_address_in_sm).first " << remapping_data_block_table.at(data_block_address_in_sm).first << std::endl;
+            exit(1);
         }
         if(data_block_address_in_fm == data_block_address_in_sm) {
             std::cout << "ERROR:data_block_address_in_fm == data_block_address_in_sm" << std::endl;
@@ -700,7 +711,8 @@ bool OS_TRANSPARENT_MANAGEMENT::cold_data_eviction(uint64_t source_address, floa
 // remapping_requestに入れるアドレスは物理アドレス
 bool OS_TRANSPARENT_MANAGEMENT::enqueue_remapping_request(RemappingRequest& remapping_request)
 {
-    uint64_t data_block_address        = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
+    uint64_t data_block_address_in_fm        = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
+    uint64_t data_block_address_in_sm        = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
     // Check duplicated remapping request in remapping_request_queue
     // If duplicated remapping requests exist, we won't add this new remapping request into the remapping_request_queue.
     bool duplicated_remapping_request  = false;
@@ -708,7 +720,7 @@ bool OS_TRANSPARENT_MANAGEMENT::enqueue_remapping_request(RemappingRequest& rema
     {
         uint64_t data_block_address_to_check        = remapping_request_queue[i].address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
 
-        if (data_block_address == data_block_address_to_check)
+        if (data_block_address_in_fm == data_block_address_to_check)
         {
             duplicated_remapping_request = true; // Find a duplicated remapping request
             break;
@@ -723,6 +735,18 @@ bool OS_TRANSPARENT_MANAGEMENT::enqueue_remapping_request(RemappingRequest& rema
             {
                 std::cout << __func__ << ": add new remapping request error 2." << std::endl;
                 abort();
+            }
+
+            // check
+            if(remapping_data_block_table.at(data_block_address_in_fm).first >= fast_memory_capacity_at_data_block_granularity) {
+                std::cout << "ERROR:data_block_address_in_fm is not in fm(enqueue_remapping_request)." << std::endl;
+                abort();
+            }
+            if(remapping_data_block_table.at(data_block_address_in_sm).first < fast_memory_capacity_at_data_block_granularity) {
+                std::cout << "ERROR:data_block_address_in_sm is not in sm(enqueue_remapping_request)." << std::endl;
+                std::cout << "data_block_address_in_sm " << data_block_address_in_sm << std::endl;
+                std::cout << "remapping_data_block_table.at(data_block_address_in_sm).first " << remapping_data_block_table.at(data_block_address_in_sm).first << std::endl;
+                exit(1);
             }
 
             // Enqueue a remapping request
@@ -790,6 +814,10 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
             //     std::cout << "ERROR:wrong active_entry_number" << std::endl;
             // }
             // active_entry_number += 1;
+        }
+        else if(remapping_data_block_table.at(data_address_in_fm).second == false && remapping_data_block_table.at(data_address_in_sm).second == false){ //errorチェック
+            std::cout << "ERROR:remapping_request is something wrong" << std::endl;
+            exit(1);
         }
         else {
             migration_count_between_gc++;

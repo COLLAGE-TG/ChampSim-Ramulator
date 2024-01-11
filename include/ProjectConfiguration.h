@@ -94,6 +94,15 @@
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 #define HOTNESS_THRESHOLD (1u)
+#define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (100) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
+// overheads
+#define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
+// #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
+#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (20000) //cycles
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+#define HOTNESS_THRESHOLD_WITH_GC (1) // gcと同時にマイグレーションするときのhotness閾値
+#endif // GC_MIGRATION_WITH_GC
 #else
 #define HOTNESS_THRESHOLD (1u)
 #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_VARIABLE_GRANULARITY, IDEAL_SINGLE_MEMPOD
@@ -209,9 +218,11 @@ public:
 
     uint64_t swapping_count;
     uint64_t swapping_traffic_in_bytes;
+    uint64_t migration_cycles;
 #if (GC_TRACE == ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     uint64_t migration_with_gc_count;
+    uint64_t migration_cycles_with_gc;
 #endif // GC_MIGRATION_WITH_GC
 #endif // GC_TRACE
     uint64_t remapping_request_queue_congestion;
