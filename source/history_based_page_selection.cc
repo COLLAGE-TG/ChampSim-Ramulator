@@ -514,7 +514,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
             continue;
         }
 #endif // GC_MARKED_OBJECT
-        // コールドページかつ高速メモリにあるなら
+        // コールドページなら
         if(counter_table.at(p_data_block_address) < HOTNESS_THRESHOLD_WITH_GC) {
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
@@ -523,26 +523,26 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
                 while(remapping_data_block_table.at(hotness_data_block_address_queue_with_gc.front()).first < fast_memory_capacity_at_data_block_granularity) {
                     hotness_data_block_address_queue_with_gc.pop(); //高速メモリにあるページはpop
                     if(hotness_data_block_address_queue_with_gc.empty()) break;
-#if (GC_MARKED_OBJECT == DISABLE)
-                    if(remapping_data_block_table.at(hotness_data_block_address_queue_with_gc.front()).first >= fast_memory_capacity_at_data_block_granularity) {
-                        // unmarked_pagesならスキップ
-                        bool hotness_data_block_is_unmarked = false;
-                        uint64_t tmp_hotness_data_block_address = hotness_data_block_address_queue_with_gc.front(); //physical
-                        for(uint64_t i = 0; i < marked_or_unmarked_pages.size(); i++) {
-                            if(tmp_hotness_data_block_address == marked_or_unmarked_pages.at(i)) {
-                                hotness_data_block_is_unmarked = true;
-                                break;
-                            }
-                        }
-                        if(hotness_data_block_is_unmarked) {
-                            // debug
-                            std::cout << "hotness_data_block_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
-                            // debug
-                            hotness_data_block_address_queue_with_gc.pop(); //unmarked pageなのでpop
-                            continue;
-                        }
-                    }
-#endif // GC_MARKED_OBJECT
+// #if (GC_MARKED_OBJECT == DISABLE)
+//                     if(remapping_data_block_table.at(hotness_data_block_address_queue_with_gc.front()).first >= fast_memory_capacity_at_data_block_granularity) {
+//                         // unmarked_pagesならスキップ
+//                         bool hotness_data_block_is_unmarked = false;
+//                         uint64_t tmp_hotness_data_block_address = hotness_data_block_address_queue_with_gc.front(); //physical
+//                         for(uint64_t i = 0; i < marked_or_unmarked_pages.size(); i++) {
+//                             if(tmp_hotness_data_block_address == marked_or_unmarked_pages.at(i)) {
+//                                 hotness_data_block_is_unmarked = true;
+//                                 break;
+//                             }
+//                         }
+//                         if(hotness_data_block_is_unmarked) {
+//                             // debug
+//                             std::cout << "hotness_data_block_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
+//                             // debug
+//                             hotness_data_block_address_queue_with_gc.pop(); //unmarked pageなのでpop
+//                             continue;
+//                         }
+//                     }
+// #endif // GC_MARKED_OBJECT
                 }
                 uint64_t hotness_data_block_address; //physical
                 // キューが空なら終了
