@@ -166,7 +166,7 @@
                 "2000000000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
-                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/just_allocate_0_2000000000.champsim.xz"
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/just_allocate_0_2000000000_unmarked.champsim.xz"
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
@@ -224,10 +224,10 @@
             "miDebuggerPath": "/usr/bin/gdb" // The path of debugger. e.g., /usr/local/bin/gdb, /usr/bin/gdb
         },
         {
-            "name": "(gdb) ./test4.out for test4.c",
+            "name": "(gdb) ./testnew.out for testnew.c",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tmp_benchmark/ex_files/./test4.out", // the executable file's name for debugging
+            "program": "${workspaceFolder}/tmp_benchmark/ex_files/./testnew.out", // the executable file's name for debugging
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],

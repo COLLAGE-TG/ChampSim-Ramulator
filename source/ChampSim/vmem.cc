@@ -97,7 +97,7 @@ std::pair<uint64_t, uint64_t> VirtualMemory::va_to_pa(uint32_t cpu_num, uint64_t
         auto tmp_check = vpage_to_ppage_map.find({cpu_num, vaddr >> LOG2_PAGE_SIZE});
         if(tmp_check == vpage_to_ppage_map.end()) {
             // taiga debug
-            std::cout << "このGCオブジェクトはメモリに存在しません。（va_ro_pa）" << std::endl;
+            // std::cout << "このGCオブジェクトはメモリに存在しません。（va_ro_pa）" << std::endl;
             // taiga debug
             return {0, 0}; // paddrが0。migration_with_gcから呼び出された場合、paddr0。
         }

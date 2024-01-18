@@ -32,7 +32,7 @@
 #define CHECK_INSTR_ADDRESS (DISABLE) //命令がアクセスする物理アドレスを出力
 #define PRINT_V_ADDRESS (DISABLE) //仮想アドレスを出力（失敗）
 #define PRINT_V_ADDRESS_TRACE (DISABLE) //仮想アドレスを出力
-#define TEST_HISTORY_WITH_GC (ENABLE) // unmarked_pagesを出力, マイグレーションページを出力, gc with マイグレーションページを出力
+#define TEST_HISTORY_WITH_GC (DISABLE) // unmarked_pagesを出力, マイグレーションページを出力, gc with マイグレーションページを出力
 
 /** Configuration for hybrid memory systems */
 #if (MEMORY_USE_HYBRID == ENABLE)
@@ -94,14 +94,14 @@
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 #define HOTNESS_THRESHOLD (1u)
-#define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
-#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (100) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
+#define EPOCH_LENGTH                          (100000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
 // #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
 #define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (20000) //cycles
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-#define HOTNESS_THRESHOLD_WITH_GC (1) // gcと同時にマイグレーションするときのhotness閾値
+#define HOTNESS_THRESHOLD_WITH_GC (1u) // gcと同時にマイグレーションするときのhotness閾値
 #endif // GC_MIGRATION_WITH_GC
 #else
 #define HOTNESS_THRESHOLD (1u)

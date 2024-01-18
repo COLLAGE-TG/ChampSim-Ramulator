@@ -35,8 +35,8 @@
 #define HOTNESS_WIDTH                         bool
 #define HOTNESS_DEFAULT_VALUE                 (false)
 
-#define EPOCH_LENGTH                          (10000) //EPOCH_LENGTH命令ごとにスワップを行う
-#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (100) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
+#define EPOCH_LENGTH                          (100000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles

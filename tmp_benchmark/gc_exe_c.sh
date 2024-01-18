@@ -9,7 +9,7 @@ SAMPLE_FILENAME_NO_DOT="${SAMPLE_FILENAME%.*}"
 # GC_ROOT=/home/funkytaiga/tools/gc-8.2.2
 GC_ROOT=/home/funkytaiga/tools
 # GC_ROOT=/home/funkytaiga/ChampSim_Ramulator
-echo "gcc -I${GC_ROOT}/gc-8.2.2/include -L${GC_ROOT}/gc-8.2.2/.libs -Wl,-R${GC_ROOT}/gc-8.2.2/.libs ${SAMPLE_FILENAME} -lgc -g -o ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out " 
-gcc -I${GC_ROOT}/gc-8.2.2/include -L${GC_ROOT}/gc-8.2.2/.libs -Wl,-R${GC_ROOT}/gc-8.2.2/.libs ${SAMPLE_FILENAME} -lgc -g -o ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out 
-echo "gcc -I${GC_ROOT}/gc-8.2.2/include -L${GC_ROOT}/gc-8.2.2/.libs -Wl,-R${GC_ROOT}/gc-8.2.2/.libs ${SAMPLE_FILENAME} -lgc -g -o ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out "
+echo "gcc -I${GC_ROOT}/gc-8.2.2/include -L${GC_ROOT}/gc-8.2.2/.libs -Wl,-R${GC_ROOT}/gc-8.2.2/.libs ${SAMPLE_FILENAME} -lgc -g -o ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out" 
+gcc -I${GC_ROOT}/gc-8.2.2/include -L${GC_ROOT}/gc-8.2.2/.libs -Wl,-R${GC_ROOT}/gc-8.2.2/.libs ${SAMPLE_FILENAME} -lgc -g -o ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out
+echo "/usr/bin/time ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out"
 /usr/bin/time ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out

@@ -151,7 +151,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std
         hotness_data_block_address_queue_with_gc.pop();
     }
     // debug
-    std::cout << "=============marked pages : count===============" << std::endl;
+    // std::cout << "=============marked pages : count===============" << std::endl;
     for(uint64_t i = 0; i < marked_or_unmarked_pages.size(); i++) {
         uint64_t curr_p_page = marked_or_unmarked_pages.at(i);
         // check
@@ -160,7 +160,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std
             abort();
         }
         // taiga debug
-        std::cout << curr_p_page << " : " << counter_table.at(curr_p_page) << std::endl;
+        // std::cout << curr_p_page << " : " << counter_table.at(curr_p_page) << std::endl;
         // taiga debug
         // curr_p_pageがHOTNESSかどうか判断
         if(counter_table.at(curr_p_page) >= HOTNESS_THRESHOLD_WITH_GC) {
@@ -171,7 +171,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc(std::vector<std
         
     }
 
-    std::cout << "=============marked pages : count (end)===============" << std::endl; // debug
+    // std::cout << "=============marked pages : count (end)===============" << std::endl; // debug
 
     return true;
 }
@@ -192,13 +192,13 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
 
     // unmarked_pageならtmp_pages_and_count.at(i).secondの値を0にする。それによってhotness_tableには入らない
     // debug
-    std::cout << "==============print unmarked pages=============" << std::endl;
+    // std::cout << "==============print unmarked pages=============" << std::endl;
     // debug
     for(uint64_t i = 0; i < unmarked_pages.size(); i++) {
         uint64_t tmp_unmarked_page = unmarked_pages.at(i);
         tmp_pages_and_count.at(tmp_unmarked_page).second = 0;
         // debug
-        std::cout << tmp_unmarked_page << std::endl;
+        // std::cout << tmp_unmarked_page << std::endl;
         // debug
     }
 
@@ -225,7 +225,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
         hotness_table_with_gc.at(tmp_hotpage_data_block_address) = true;
         hotness_data_block_address_queue_with_gc.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
         // debug
-        std::cout << "tmp_hotpage_data_block_address " << tmp_hotpage_data_block_address << "(choose_hotpage_with_sort_with_gc_unmarked)" << std::endl;
+        // std::cout << "tmp_hotpage_data_block_address " << tmp_hotpage_data_block_address << "(choose_hotpage_with_sort_with_gc_unmarked)" << std::endl;
         // debug
     }
 
@@ -496,7 +496,12 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
     for(uint64_t p_data_block_address = 0; p_data_block_address < total_capacity_at_data_block_granularity; p_data_block_address++) {
         // キューが空なら終了
         if(hotness_data_block_address_queue_with_gc.empty()) {
+            std::cout << "at hotness_data_block_address_queue_with_gc.empty(), p_data_block_address = " << p_data_block_address << " (add_new_remapping_request_to_queue_with_gc)" <<std::endl;
             break;
+        }
+        // hotpageはスルー
+        if(hotness_table_with_gc.at(p_data_block_address) == true) {
+            continue;
         }
 #if (GC_MARKED_OBJECT == DISABLE)
         // unmarked_pagesならスキップ
@@ -509,7 +514,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
         }
         if(p_data_is_unmarked) {
             // debug
-            std::cout << "p_data_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
+            // std::cout << "p_data_is_unmarked(add_new_remapping_request_to_queue_with_gc)" << std::endl;
             // debug
             continue;
         }
@@ -575,12 +580,12 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
                 }
 
                 // taiga debug
-                static bool first_deb_a = true;
-                if(first_deb_a) {
-                    std::cout << "=========remapping_request.address_in_fm : remapping_request.address_in_sm=========" << std::endl;
-                    first_deb_a = false;
-                }
-                std::cout << remapping_request.address_in_fm << " : " << remapping_request.address_in_sm << std::endl;
+                // static bool first_deb_a = true;
+                // if(first_deb_a) {
+                //     std::cout << "=========remapping_request.address_in_fm : remapping_request.address_in_sm=========" << std::endl;
+                //     first_deb_a = false;
+                // }
+                // std::cout << remapping_request.address_in_fm << " : " << remapping_request.address_in_sm << std::endl;
                 // taiga debug
                 enqueue_remapping_request(remapping_request);
             }

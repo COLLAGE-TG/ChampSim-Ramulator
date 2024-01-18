@@ -15,7 +15,7 @@ void seq() {
 
     long long cur_array_i = 0; // arrayのインデックス
     int max_obj_size = 100000; // オブジェクトサイズの最大値
-    int M = 50000; //繰り返し
+    int M = 70000; //繰り返し
     // 乱数生成の初期化
     srand(time(NULL));
 
@@ -73,8 +73,8 @@ int main(void)
 
     seq();
 
-    printf("NUM OF GC : %lu（random_size_stream.c）\n", GC_get_gc_no());
-    printf("TIME OF GC : %lu ms（random_size_stream.c）\n", GC_get_full_gc_total_time());
+    printf("NUM OF GC : %lu（seq_benchmark.c）\n", GC_get_gc_no());
+    printf("TIME OF GC : %lu ms（seq_benchmark.c）\n", GC_get_full_gc_total_time());
     return 0;
 }
 

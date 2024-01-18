@@ -639,15 +639,14 @@ void simulation_run(const ramulator::Config& configs, ramulator::Memory<T, ramul
 #if (GC_MARKED_OBJECT == ENABLE)
         tmp_marked_page_file_name.replace(dotPos, std::string::npos, ".txt");
 #else //GC_MARKED_OBJECT
-        tmp_marked_page_file_name.replace(dotPos, std::string::npos, "_unmarked_obj.txt");
+        tmp_marked_page_file_name.replace(dotPos, std::string::npos, "_obj.txt");
 #endif //GC_MARKED_OBJECT
 
     }
     // "tmp_trace" を "tmp_gc" に置き換え
     size_t lastSlashPos = tmp_marked_page_file_name.find_last_of("/");
     if (lastSlashPos != std::string::npos) {
-
-        tmp_marked_page_file_name.replace(0, lastSlashPos + 1, "tmp_gc_marked_pages_files/");
+        tmp_marked_page_file_name.replace(0, lastSlashPos + 1, "gc_marked_pages_files/");
     } else {
         // スラッシュが見つからない場合、何もしないかエラーハンドリングが必要です。
         std::cerr << "Error: ファイルパスにスラッシュが含まれていません。" << std::endl;
@@ -655,7 +654,7 @@ void simulation_run(const ramulator::Config& configs, ramulator::Memory<T, ramul
     }
 
     // taiga debug
-    std::cout << "tmp_marked_page_file_name.txt : " << tmp_marked_page_file_name << std::endl; 
+    std::cout << "tmp_marked_page_file_name.txt : " << tmp_marked_page_file_name << std::endl;
     // taiga debug
     O3_CPU::marked_page_file_name = tmp_marked_page_file_name;
 #endif // GC_MIGRATION_WITH_GC
@@ -683,7 +682,7 @@ void simulation_run(const ramulator::Config& configs, ramulator::Memory<T, ramul
 
     VirtualMemory::address_output_file_name = tmp_address_output_file_name;
 
-#endif
+#endif // CHECK_INSTR_ADDRESS
 // taiga added
 
 #if (MEMORY_USE_SWAPPING_UNIT == ENABLE) && (TEST_SWAPPING_UNIT == ENABLE)
