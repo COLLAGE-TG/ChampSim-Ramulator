@@ -220,7 +220,7 @@ public:
     static std::string marked_page_file_name;
     std::vector<uint64_t> find_marked_pages();
     uint64_t migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management);
-    uint64_t gc_start_cycle, gc_end_cycle, gc_cycle, migration_cycle;
+    uint64_t gc_start_cycle, gc_end_cycle, gc_cycle, migration_with_gc_cycle, migration_with_gc_count;
 #if (PRINT_V_ADDRESS == ENABLE)
     // static bool first_file_open_p_v_a = true;
     // std::string print_v_address_filename = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt";

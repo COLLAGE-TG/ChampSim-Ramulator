@@ -834,16 +834,19 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
         // initialize_swapping();
     }
 
-    migration_with_gc_count += migration_count_between_gc;
+    // sum_migration_with_gc_countはgc中にmigrationした回数の合計
+    sum_migration_with_gc_count += migration_count_between_gc;
+
+    // migrationにかかったオーバーヘッドを計算
+    // uint64_t migration_cycle_between_gc = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_gc;
+    // migration_cycle_between_gc += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_gc;
+    // TLBのオーバーヘッドはGCと同時にはできない。
+    // migration_cycle_between_gc += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_gc;
+
 
     std::cout << "migration count with gc " << migration_count_between_gc << std::endl; //debug
 
-    // migrationにかかったオーバーヘッドを計算
-    uint64_t migration_cycle_between_gc = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_gc;
-    // migration_cycle_between_gc += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_gc;
-    migration_cycle_between_gc += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_gc;    
-
-    return migration_cycle_between_gc;
+    return migration_count_between_gc;
 }
 #endif // GC_MIGRATION_WITH_GC
 #endif // HISTORY_BASED_PAGE_SELECTION

@@ -486,17 +486,21 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         }
 #if (GC_MARKED_OBJECT == ENABLE)
         std::vector<uint64_t> marked_pages = find_marked_pages();
-        std::thread thread3([this, marked_pages] {migration_cycle = migration_with_gc(marked_pages, os_transparent_management); });
+        std::thread thread3([this, marked_pages] {migration_with_gc_count = migration_with_gc(marked_pages, os_transparent_management); });
         thread3.join();
 #else // GC_MARKED_OBJECT
         std::vector<uint64_t> unmarked_pages = find_marked_pages(); // find_unmarked_pages()
-
-        std::thread thread2([this, unmarked_pages] {migration_cycle = migration_with_gc(unmarked_pages, os_transparent_management); });
+        std::thread thread2([this, unmarked_pages] {migration_with_gc_count = migration_with_gc(unmarked_pages, os_transparent_management); });
         thread2.join();
 #endif // GC_MARKED_OBJECT
-        
+
+        // GC中のマイグレーションにかかったサイクル数を計算
+        migration_with_gc_cycle = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_with_gc_count;
+        migration_with_gc_tlb_cycle - OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_with_gc_count;
         // uint64_t migration_cycles = memory_controller->migration_with_gc(marked_pages);
-        std::cout << "migration_cycle " << migration_cycle << std::endl; //debug
+        std::cout << "migration_with_gc_count " << migration_with_gc_count << std::endl; //debug
+        std::cout << "migration_with_gc_cycle " << migration_with_gc_cycle << std::endl; //debug
+        std::cout << "migration_with_gc_tlb_cycle " << migration_with_gc_tlb_cycle << std::endl; //debug
 
         // GC_start時のcurrent_cycleを記録
         gc_start_cycle = current_cycle;
@@ -519,10 +523,13 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // taiga debug
 
         // サイクル数の調整
-        if(migration_cycle > gc_cycle) {
-            current_cycle = gc_start_cycle + migration_cycle;
+        if(migration_with_gc_cycle > gc_cycle) {
+            current_cycle = gc_start_cycle + migration_with_gc_cycle;
         }
         // elseは何もしない
+
+        // TLBのオーバーヘッドを追加
+        current_cycle = migration_with_gc_tlb_cycle;
     }
     if(rob_entry.is_gc_rtn_sweep_end == 1) {
         // degug
@@ -919,7 +926,7 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
 }
 
 uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management) {
-    uint64_t cycles_of_migrations = 0;
+    uint64_t count_of_migrations = 0;
     // std::cout << "migration_with_gc here" << std::endl;
     // std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
     // std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
@@ -947,10 +954,10 @@ uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPAR
     os_transparent_management->choose_hotpage_with_sort_with_gc_unmarked(pages);
 #endif // GC_MARKED_OBJECT
     os_transparent_management->add_new_remapping_request_to_queue_with_gc(pages);
-    cycles_of_migrations = os_transparent_management->migration_all_start_with_gc();
+    count_of_migrations = os_transparent_management->migration_all_start_with_gc();
     os_transparent_management->initialize_hotness_table_with_gc(os_transparent_management->hotness_table_with_gc);
 
-    return cycles_of_migrations;
+    return count_of_migrations;
 
 #endif // GC_MIGRATION_WITH_GC
 // taiga added
