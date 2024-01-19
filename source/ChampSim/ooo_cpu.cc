@@ -496,11 +496,14 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 
         // GC中のマイグレーションにかかったサイクル数を計算
         migration_with_gc_cycle = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_with_gc_count;
-        migration_with_gc_tlb_cycle - OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_with_gc_count;
+        migration_with_gc_tlb_cycle = OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_with_gc_count;
         // uint64_t migration_cycles = memory_controller->migration_with_gc(marked_pages);
-        std::cout << "migration_with_gc_count " << migration_with_gc_count << std::endl; //debug
-        std::cout << "migration_with_gc_cycle " << migration_with_gc_cycle << std::endl; //debug
-        std::cout << "migration_with_gc_tlb_cycle " << migration_with_gc_tlb_cycle << std::endl; //debug
+        
+        // debug
+        std::cout << "migration_with_gc_count " << migration_with_gc_count << std::endl;
+        std::cout << "migration_with_gc_cycle " << migration_with_gc_cycle << std::endl; 
+        std::cout << "migration_with_gc_tlb_cycle " << migration_with_gc_tlb_cycle << std::endl; 
+        // debug
 
         // GC_start時のcurrent_cycleを記録
         gc_start_cycle = current_cycle;

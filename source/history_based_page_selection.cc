@@ -268,6 +268,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
 
 bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_busy_degree)
 {
+    bool zero_migration = true;
     // ================================migration ver================================
     // hotness_data_block_address_queueのページを高速メモリに移動させるためのremapping_request発行
     // 片方の有効bitがtrueならmigration回数は1回
@@ -385,6 +386,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
                 if (queue_busy_degree <= QUEUE_BUSY_DEGREE_THRESHOLD)
                 {
                     enqueue_remapping_request(remapping_request);
+                    zero_migration = false;
                 }
                 else {
                     std::cout << "WARNING : remapping request queue is full" << std::endl;
@@ -478,6 +480,10 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
     while(!hotness_data_block_address_queue.empty()) {
         hotness_data_block_address_queue.pop();
     }
+
+    // debug
+    if(zero_migration) std::cout << "マイグレーションを行うべきページはありませんでした（add_new_remapping_request_to_queue）" << std::endl;
+    // debug
 
     return true;
 }
@@ -807,7 +813,7 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
             abort();
         }
         // start_swapping_segments_for_page_size(remapping_request.address_in_fm, remapping_request.address_in_sm);
-        // migration_count_between_epochを更新
+        // migration_count_between_gcを更新
         // 片方の有効bitがtrueならmigration回数は1回
         // 両方の有効bitがtrueならmigration回数は2回
         uint64_t data_address_in_fm = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
@@ -842,9 +848,6 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
     // migration_cycle_between_gc += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_gc;
     // TLBのオーバーヘッドはGCと同時にはできない。
     // migration_cycle_between_gc += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_gc;
-
-
-    std::cout << "migration count with gc " << migration_count_between_gc << std::endl; //debug
 
     return migration_count_between_gc;
 }

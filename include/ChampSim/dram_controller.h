@@ -255,8 +255,8 @@ MEMORY_CONTROLLER<T, T2>::~MEMORY_CONTROLLER()
     output_statistics.swapping_traffic_in_bytes = swapping_traffic_in_bytes;
 #if (GC_TRACE == ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-    migration_with_gc_count = os_transparent_management.migration_with_gc_count;
-    output_statistics.migration_with_gc_count = migration_with_gc_count;
+    migration_with_gc_count = os_transparent_management.sum_migration_with_gc_count;
+    output_statistics.sum_migration_with_gc_count = migration_with_gc_count;
 #endif
 #endif // GC_TRACE
 #endif // MEMORY_USE_SWAPPING_UNIT
@@ -1208,7 +1208,7 @@ bool MEMORY_CONTROLLER<T, T2>::update_swapping_segments(uint64_t address_1, uint
 template<class T, class T2>
 void MEMORY_CONTROLLER<T, T2>::migration_all_start()
 {
-    uint64_t migration_count_between_epoch=0;
+    uint64_t migration_count_between_epoch = 0;
     // queueの中身全てのremappingを行う
     while(!os_transparent_management.remapping_request_queue.empty()) {
         OS_TRANSPARENT_MANAGEMENT::RemappingRequest remapping_request;
@@ -1264,10 +1264,9 @@ void MEMORY_CONTROLLER<T, T2>::migration_all_start()
         os_transparent_management.first_swap_epoch_for_dram_controller = false;
     }
 #endif //TEST_HISTORY_BASED_PAGE_SELECTION
-
-#if (TEST_HISTORY_WITH_GC == ENABLE)
+// debug
     std::cout << "migration_count_between_epoch " << migration_count_between_epoch << std::endl;
-#endif // TEST_HISTORY_WITH_GC
+// debug
     // migrationにかかったオーバーヘッドを追加
     current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_epoch;
     // current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_epoch;

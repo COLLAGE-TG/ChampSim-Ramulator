@@ -283,12 +283,12 @@ int main(int argc, char** argv)
 
 #if (PRINT_MEMORY_TRACE == ENABLE)
     // Prepare file for recording memory traces.
-    output_memorytrace.output_file_initialization(&(argv[start_position_of_traces]), argc - start_position_of_traces);
+    output_memorytrace.output_file_initialization(&(argv[start_position_of_traces]), argc - start_position_of_traces, input_parameter.warmup_instructions, input_parameter.simulation_instructions);
 #endif // PRINT_MEMORY_TRACE
 
 #if (PRINT_STATISTICS_INTO_FILE == ENABLE)
     // Prepare file for recording statistics.
-    output_statistics.output_file_initialization(&(argv[start_position_of_traces]), argc - start_position_of_traces);
+    output_statistics.output_file_initialization(&(argv[start_position_of_traces]), argc - start_position_of_traces, input_parameter.warmup_instructions, input_parameter.simulation_instructions);
 #endif // PRINT_STATISTICS_INTO_FILE
 
     /** @note Prepare the ChampSim framework */

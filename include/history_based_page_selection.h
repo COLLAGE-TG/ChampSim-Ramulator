@@ -35,7 +35,7 @@
 #define HOTNESS_WIDTH                         bool
 #define HOTNESS_DEFAULT_VALUE                 (false)
 
-#define EPOCH_LENGTH                          (100000) //EPOCH_LENGTH命令ごとにスワップを行う
+// #define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
 // overheads
@@ -98,7 +98,7 @@ public:
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     std::vector<HOTNESS_WIDTH>& hotness_table_with_gc;
     std::queue<uint64_t> hotness_data_block_address_queue_with_gc;
-    uint64_t migration_with_gc_count = 0;
+    uint64_t sum_migration_with_gc_count = 0;
 #endif // GC_MIGRATION_WITH_GC
 
     /* Remapping request */

@@ -22,7 +22,7 @@ DATA_OUTPUT::~DATA_OUTPUT()
     }
 }
 
-void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t number)
+void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t number, uint64_t warmup_instr, uint64_t simulation_instr)
 {
     std::string benchmark_names;
     for (uint32_t i = 0; i < number; i++)
@@ -50,6 +50,12 @@ void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t numbe
         free(string_temp);
     }
     benchmark_names.erase(benchmark_names.size() - 1);
+
+    // warmup,simulation instructionを付与
+    benchmark_names += "_cw_";
+    benchmark_names += std::to_string(warmup_instr);
+    benchmark_names += "_cs_";
+    benchmark_names += std::to_string(simulation_instr);
 
     // taiga added
 #if (GC_MARKED_OBJECT == ENABLE)
@@ -88,10 +94,10 @@ MEMORY_TRACE::MEMORY_TRACE(std::string v1, std::string v2)
 {
 }
 
-MEMORY_TRACE::MEMORY_TRACE(std::string v1, std::string v2, char** string_array, uint32_t number)
+MEMORY_TRACE::MEMORY_TRACE(std::string v1, std::string v2, char** string_array, uint32_t number, uint64_t warmup_instr, uint64_t simulation_instr)
 : DATA_OUTPUT(v1, v2)
 {
-    output_file_initialization(string_array, number);
+    output_file_initialization(string_array, number, warmup_instr, simulation_instr);
 }
 
 MEMORY_TRACE::~MEMORY_TRACE()
@@ -113,10 +119,10 @@ SIMULATOR_STATISTICS::SIMULATOR_STATISTICS(std::string v1, std::string v2)
     statistics_initialization();
 }
 
-SIMULATOR_STATISTICS::SIMULATOR_STATISTICS(std::string v1, std::string v2, char** string_array, uint32_t number)
+SIMULATOR_STATISTICS::SIMULATOR_STATISTICS(std::string v1, std::string v2, char** string_array, uint32_t number, uint64_t warmup_instr, uint64_t simulation_instr)
 : DATA_OUTPUT(v1, v2)
 {
-    output_file_initialization(string_array, number);
+    output_file_initialization(string_array, number, warmup_instr, simulation_instr);
     statistics_initialization();
 }
 
@@ -148,8 +154,8 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
         fprintf(file_handler, "swapping_count: %ld, swapping_traffic_in_bytes: %ld.\n", swapping_count, swapping_traffic_in_bytes);
 #endif
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-        migration_cycles_with_gc = (OVERHEAD_OF_MIGRATION_PER_PAGE + OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE) * migration_with_gc_count;
-        fprintf(file_handler, "migration_with_gc_count: %ld migration_cycles_with_gc %ld.\n", migration_with_gc_count, migration_cycles_with_gc);        
+        migration_cycles_with_gc = (OVERHEAD_OF_MIGRATION_PER_PAGE + OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE) * sum_migration_with_gc_count;
+        fprintf(file_handler, "migration_with_gc_count: %ld migration_cycles_with_gc %ld.\n", sum_migration_with_gc_count, migration_cycles_with_gc);        
 #endif // GC_MIGRATION_WITH_GC
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)

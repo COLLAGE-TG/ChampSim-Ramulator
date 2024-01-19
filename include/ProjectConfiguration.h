@@ -16,7 +16,7 @@
 #define RAMULATOR                            (ENABLE)  // Whether use ramulator, assuming ramulator uses addresses at byte granularity and returns data at cache line granularity.
 #define MEMORY_USE_HYBRID                    (ENABLE) // Whether use hybrid memory system instead of single memory systems
 #define PRINT_STATISTICS_INTO_FILE           (ENABLE)  // Whether print simulation statistics into files
-#define PRINT_MEMORY_TRACE                   (ENABLE)  // Whether print memory trace into files
+#define PRINT_MEMORY_TRACE                   (DISABLE)  // Whether print memory trace into files
 #define MEMORY_USE_SWAPPING_UNIT             (ENABLE)  // Whether memory controller uses swapping unit to swap data (data swapping overhead is considered)
 #define MEMORY_USE_OS_TRANSPARENT_MANAGEMENT (ENABLE)  // Whether memory controller uses OS-transparent management designs to simulate the memory system instead of static (no-migration) methods
 #define CPU_USE_MULTIPLE_CORES               (DISABLE) // Whether CPU uses multiple cores to run simulation (go to include/ChampSim/champsim_constants.h to check related parameters)
@@ -94,7 +94,7 @@
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 #define HOTNESS_THRESHOLD (1u)
-#define EPOCH_LENGTH                          (100000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
@@ -185,7 +185,7 @@ public:
     DATA_OUTPUT(std::string v1, std::string v2);
     ~DATA_OUTPUT();
 
-    void output_file_initialization(char** string_array, uint32_t number);
+    void output_file_initialization(char** string_array, uint32_t number, uint64_t warmup_instr=0, uint64_t simulation_instr=0);
 };
 
 // Memory trace output class
@@ -193,7 +193,7 @@ class MEMORY_TRACE : public DATA_OUTPUT
 {
 public:
     MEMORY_TRACE(std::string v1, std::string v2);
-    MEMORY_TRACE(std::string v1, std::string v2, char** string_array, uint32_t number);
+    MEMORY_TRACE(std::string v1, std::string v2, char** string_array, uint32_t number, uint64_t warmup_instr, uint64_t simulation_instr);
     ~MEMORY_TRACE();
 
     void output_memory_trace_hexadecimal(uint64_t address, char type);
@@ -221,7 +221,7 @@ public:
     uint64_t migration_cycles;
 #if (GC_TRACE == ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-    uint64_t migration_with_gc_count;
+    uint64_t sum_migration_with_gc_count;
     uint64_t migration_cycles_with_gc;
 #endif // GC_MIGRATION_WITH_GC
 #endif // GC_TRACE
@@ -237,7 +237,7 @@ public:
 #endif // IDEAL_VARIABLE_GRANULARITY
 
     SIMULATOR_STATISTICS(std::string v1, std::string v2);
-    SIMULATOR_STATISTICS(std::string v1, std::string v2, char** string_array, uint32_t number);
+    SIMULATOR_STATISTICS(std::string v1, std::string v2, char** string_array, uint32_t number, uint64_t warmup_instr, uint64_t simulation_instr);
     ~SIMULATOR_STATISTICS();
 
 private:
