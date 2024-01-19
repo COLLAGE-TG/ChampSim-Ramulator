@@ -1248,6 +1248,29 @@ long O3_CPU::retire_rob()
     num_retired += retire_count;
     ROB.erase(retire_begin, retire_end);
 
+    // taiga added
+    // migration?
+    static uint64_t pre_instr = 0;
+    if(num_retired - pre_instr > EPOCH_LENGTH) {
+        // taiga debug
+        std::cout << "num_retired " << num_retired << std::endl;
+        // taiga debug
+
+        os_transparent_management->choose_hotpage_with_sort();
+        os_transparent_management->add_new_remapping_request_to_queue(0); // remapping_queueを無視（いつか直す）
+        pre_instr = num_retired;
+        os_transparent_management->clear_counter_table_epoch_count++;
+        os_transparent_management->initialize_hotness_table(os_transparent_management->hotness_table);
+        // カウンターテーブルの初期化
+        // CLEAR_COUNTER_TABLE_EPOCH_NUMエポック毎に行う
+        if(os_transparent_management->clear_counter_table_epoch_count >= CLEAR_COUNTER_TABLE_EPOCH_NUM) {
+            os_transparent_management->initialize_counter_table(os_transparent_management->counter_table);
+            os_transparent_management->clear_counter_table_epoch_count = 0;
+        }
+    }
+    
+    // taiga added
+
     return retire_count;
 }
 

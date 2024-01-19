@@ -197,7 +197,7 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
 
     bool issue_remapping_request(RemappingRequest& remapping_request);
     bool finish_remapping_request();
-    bool epoch_check();
+    // bool epoch_check();
     // bool remapping_request_queue_has_elements();
 
     // Detect cold data block
@@ -207,6 +207,7 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
 //     bool finish_fm_access_in_incomplete_read_request_queue(uint64_t h_address);
 //     bool finish_fm_access_in_incomplete_write_request_queue(uint64_t h_address);
 // #endif // COLOCATED_LINE_LOCATION_TABLE
+
 #if(GC_TRACE == ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #if (GC_MARKED_OBJECT == ENABLE)
@@ -219,10 +220,6 @@ std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : ph
     void initialize_hotness_table_with_gc(std::vector<HOTNESS_WIDTH>& table);
 #endif // GC_MIGRATION_WITH_GC
 #endif // GC_TRACE
-private:
-    // Evict cold data block
-    bool cold_data_eviction(uint64_t source_address, float queue_busy_degree);
-
     // Add new remapping request into the remapping_request_queue
     bool enqueue_remapping_request(RemappingRequest& remapping_request);
 
@@ -233,6 +230,9 @@ private:
     void initialize_counter_table(std::vector<COUNTER_WIDTH>& table);
 
     void initialize_hotness_table(std::vector<HOTNESS_WIDTH>& table);
+private:
+    // Evict cold data block
+    bool cold_data_eviction(uint64_t source_address, float queue_busy_degree);
 };
 
 #endif // HISTORY_BASED_PAGE_SELECTION
