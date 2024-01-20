@@ -58,20 +58,34 @@ void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t numbe
     benchmark_names += std::to_string(simulation_instr);
 
     // taiga added
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT==ENABLE)
 #if (GC_MARKED_OBJECT == ENABLE)
     benchmark_names += "marked_";
 #else
     benchmark_names += "_unmarked";
 #endif
+
+#if(NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)
+    benchmark_names += "_no_method_migration";
+#endif // NO_METHOD_FOR_RUN_HYBRID_MEMORY
+
+#if (NO_MIGRATION == ENABLE)
+    benchmark_names += "_nomigration";
+#else // NO_MIGRATION
+
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     benchmark_names += "_gcmigration";
 #endif
+
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
     benchmark_names += "_epoch_";
     benchmark_names += std::to_string(EPOCH_LENGTH);
     benchmark_names += "_cleartable_";
     benchmark_names += std::to_string(CLEAR_COUNTER_TABLE_EPOCH_NUM);
 #endif
+
+#endif // NO_MIGRATION
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
     // taiga added
 
     // append file_extension to benchmark_names.
@@ -155,7 +169,10 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
 #endif
 #if (GC_MIGRATION_WITH_GC == ENABLE)
         migration_cycles_with_gc = (OVERHEAD_OF_MIGRATION_PER_PAGE + OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE) * sum_migration_with_gc_count;
-        fprintf(file_handler, "migration_with_gc_count: %ld migration_cycles_with_gc %ld.\n", sum_migration_with_gc_count, migration_cycles_with_gc);        
+        fprintf(file_handler, "migration_with_gc_count: %ld migration_cycles_with_gc %ld.\n", sum_migration_with_gc_count, migration_cycles_with_gc);  
+        // debug
+        fprintf(file_handler, "gcmigration_tlb_overhead  %ld, gcmigration_sum_overhead_without_tlb %ld", gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb);
+        // debug   
 #endif // GC_MIGRATION_WITH_GC
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)

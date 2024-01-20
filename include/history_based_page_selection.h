@@ -28,7 +28,7 @@
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 // #if (IDEAL_LINE_LOCATION_TABLE == ENABLE) || (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
 
-#define COUNTER_WIDTH                         uint8_t
+#define COUNTER_WIDTH                         uint16_t // uint8_tから変更を加えた。NOMIGRATIONのため。
 #define COUNTER_MAX_VALUE                     (UINT8_MAX)
 #define COUNTER_DEFAULT_VALUE                 (0)
 
@@ -99,6 +99,7 @@ public:
     std::vector<HOTNESS_WIDTH>& hotness_table_with_gc;
     std::queue<uint64_t> hotness_data_block_address_queue_with_gc;
     uint64_t sum_migration_with_gc_count = 0;
+    uint64_t gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb;
 #endif // GC_MIGRATION_WITH_GC
 
     /* Remapping request */

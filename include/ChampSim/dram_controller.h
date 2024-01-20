@@ -125,6 +125,7 @@ public:
 #if (GC_TRACE == ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     uint64_t migration_with_gc_count;
+    uint64_t gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb;
 #endif
 #endif // GC_TRACE
 
@@ -259,6 +260,11 @@ MEMORY_CONTROLLER<T, T2>::~MEMORY_CONTROLLER()
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     migration_with_gc_count = os_transparent_management.sum_migration_with_gc_count;
     output_statistics.sum_migration_with_gc_count = migration_with_gc_count;
+    gcmigration_tlb_overhead = os_transparent_management.gcmigration_tlb_overhead;
+    output_statistics.gcmigration_tlb_overhead = gcmigration_tlb_overhead;
+    gcmigration_sum_overhead_without_tlb = os_transparent_management.gcmigration_sum_overhead_without_tlb;
+    output_statistics.gcmigration_sum_overhead_without_tlb = gcmigration_sum_overhead_without_tlb;
+
 #endif
 #endif // GC_TRACE
 #endif // MEMORY_USE_SWAPPING_UNIT

@@ -111,16 +111,24 @@ public:
 
     // Memory controller
     MEMORY_CONTROLLER<MEMORY_TYPE, MEMORY_TYPE2> memory_controller;
-
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT==ENABLE)
     // Virtual memory
     VirtualMemory vmem;
-
     PageTableWalker cpu0_PTW {PageTableWalker::Builder {champsim::defaults::default_ptw}
                                   .name("cpu0_PTW")
                                   .cpu(PTW_CPU_ID)
                                   .virtual_memory(&vmem)
                                   .upper_levels({&cpu0_STLB_to_cpu0_PTW_queues})
                                   .lower_level(&cpu0_PTW_to_cpu0_L1D_queues)};
+#else // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
+    PageTableWalker cpu0_PTW {PageTableWalker::Builder {champsim::defaults::default_ptw}
+                                  .name("cpu0_PTW")
+                                  .cpu(PTW_CPU_ID)
+                                  .upper_levels({&cpu0_STLB_to_cpu0_PTW_queues})
+                                  .lower_level(&cpu0_PTW_to_cpu0_L1D_queues)};
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
+
+
 #if (CPU_USE_MULTIPLE_CORES == ENABLE)
     PageTableWalker cpu1_PTW {PageTableWalker::Builder {champsim::defaults::default_ptw}
                                   .name("cpu1_PTW")
@@ -182,7 +190,7 @@ public:
                          .frequency(CACHE_CLOCK_SCALE)
                          .upper_levels({&cpu0_DTLB_to_cpu0_STLB_queues, &cpu0_ITLB_to_cpu0_STLB_queues, &cpu0_L2C_to_cpu0_STLB_queues})
                          .lower_level(&cpu0_STLB_to_cpu0_PTW_queues)};
-
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     // CPU 0
     O3_CPU cpu0 {O3_CPU::Builder {champsim::defaults::default_core}
                      .index(CPU_0)
@@ -196,6 +204,18 @@ public:
                      .data_queues(&cpu0_to_cpu0_L1D_queues)
                      .virtual_memory(&vmem) // taiga added
                      .os_transparent_management(&memory_controller.os_transparent_management)}; // taiga added
+#else
+    O3_CPU cpu0 {O3_CPU::Builder {champsim::defaults::default_core}
+                     .index(CPU_0)
+                     .frequency(O3_CPU_CLOCK_SCALE)
+                     .l1i(&cpu0_L1I)
+                     .l1i_bandwidth(cpu0_L1I.MAX_TAG)
+                     .l1d_bandwidth(cpu0_L1D.MAX_TAG)
+                     .branch_predictor<BRANCH_PREDICTOR>()
+                     .btb<BRANCH_TARGET_BUFFER>()
+                     .fetch_queues(&cpu0_to_cpu0_L1I_queues)
+                     .data_queues(&cpu0_to_cpu0_L1D_queues)};
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
 #if (CPU_USE_MULTIPLE_CORES == ENABLE)
     CACHE cpu1_DTLB {CACHE::Builder {champsim::defaults::default_dtlb}
@@ -251,9 +271,14 @@ public:
                      .virtual_memory(&vmem) //taiga added
 #endif // CPU_USE_MULTIPLE_CORES
 
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT==ENABLE)
     generated_environment(ramulator::Memory<MEMORY_TYPE, ramulator::Controller>& memory, ramulator::Memory<MEMORY_TYPE2, ramulator::Controller>& memory2)
     : memory_controller(MEMORY_CONTROLLER_CLOCK_SCALE, CPU_FREQUENCY / memory.spec->speed_entry.freq, CPU_FREQUENCY / memory2.spec->speed_entry.freq, {&LLC_to_MEMORY_CONTROLLER_queues}, memory, memory2),
       vmem(PAGE_SIZE, PAGE_TABLE_LEVELS, MINOR_FAULT_PENALTY, memory.max_address + memory2.max_address)
+#else
+    generated_environment(ramulator::Memory<MEMORY_TYPE, ramulator::Controller>& memory, ramulator::Memory<MEMORY_TYPE2, ramulator::Controller>& memory2)
+    : memory_controller(MEMORY_CONTROLLER_CLOCK_SCALE, CPU_FREQUENCY / memory.spec->speed_entry.freq, CPU_FREQUENCY / memory2.spec->speed_entry.freq, {&LLC_to_MEMORY_CONTROLLER_queues}, memory, memory2)
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
     {
     }
 

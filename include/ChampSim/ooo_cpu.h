@@ -215,12 +215,14 @@ public:
     uint64_t sim_cycle() const { return current_cycle - sim_stats.begin_cycles; }
 
     void print_deadlock() override final;
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
 #if (GC_TRACE==ENABLE) // taiga added
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     static std::string marked_page_file_name;
     std::vector<uint64_t> find_marked_pages();
     uint64_t migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management);
     uint64_t gc_start_cycle, gc_end_cycle, gc_cycle, migration_with_gc_cycle, migration_with_gc_count, migration_with_gc_tlb_cycle;
+    uint64_t gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb;
 #if (PRINT_V_ADDRESS == ENABLE)
     // static bool first_file_open_p_v_a = true;
     // std::string print_v_address_filename = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt";
@@ -229,6 +231,7 @@ public:
 #endif // PRINT_V_ADDRESS
 #endif // GC_MIGRATION_WITH_GC
 #endif //GC_TRACE
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
 
 #if (USER_CODES == ENABLE)
@@ -325,12 +328,13 @@ public:
     class builder_conversion_tag
     {
     };
-
+    
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     // taiga added
     VirtualMemory* vmem;
     OS_TRANSPARENT_MANAGEMENT* os_transparent_management;
     // taiga added
-
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
     template<unsigned long long B_FLAG = 0, unsigned long long T_FLAG = 0>
     class Builder
     {
@@ -366,12 +370,12 @@ public:
         long int m_l1d_bw {};
         champsim::channel* m_fetch_queues {};
         champsim::channel* m_data_queues {};
-
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
         // taiga added
         VirtualMemory* m_vmem {};
         OS_TRANSPARENT_MANAGEMENT* m_os_transparent_management {};
         // taiga added
-
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
         friend class O3_CPU;
 
         template<unsigned long long OTHER_B, unsigned long long OTHER_T>
@@ -563,7 +567,7 @@ public:
             m_data_queues = data_queues_;
             return *this;
         }
-
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
         // // taiga added
         self_type& virtual_memory(VirtualMemory* vmem_)
         {
@@ -577,7 +581,7 @@ public:
             return *this;
         }
         // // taiga added
-
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
         template<unsigned long long B>
         Builder<B, T_FLAG> branch_predictor()
         {
@@ -593,6 +597,7 @@ public:
     };
 
     template<unsigned long long B_FLAG, unsigned long long T_FLAG>
+#if ( MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     explicit O3_CPU(Builder<B_FLAG, T_FLAG> b)
     : champsim::operable(b.m_freq_scale), cpu(b.m_cpu), DIB(b.m_dib_set, b.m_dib_way, {champsim::lg2(b.m_dib_window)}, {champsim::lg2(b.m_dib_window)}),
       LQ(b.m_lq_size), IFETCH_BUFFER_SIZE(b.m_ifetch_buffer_size), DISPATCH_BUFFER_SIZE(b.m_dispatch_buffer_size), DECODE_BUFFER_SIZE(b.m_decode_buffer_size),
@@ -602,6 +607,16 @@ public:
       SCHEDULING_LATENCY(b.m_schedule_latency), EXEC_LATENCY(b.m_execute_latency), L1I_BANDWIDTH(b.m_l1i_bw), L1D_BANDWIDTH(b.m_l1d_bw),
       L1I_bus(b.m_cpu, b.m_fetch_queues), L1D_bus(b.m_cpu, b.m_data_queues), l1i(b.m_l1i), module_pimpl(std::make_unique<module_model<B_FLAG, T_FLAG>>(this)),
       vmem(b.m_vmem),os_transparent_management(b.m_os_transparent_management)
+#else
+    explicit O3_CPU(Builder<B_FLAG, T_FLAG> b)
+    : champsim::operable(b.m_freq_scale), cpu(b.m_cpu), DIB(b.m_dib_set, b.m_dib_way, {champsim::lg2(b.m_dib_window)}, {champsim::lg2(b.m_dib_window)}),
+      LQ(b.m_lq_size), IFETCH_BUFFER_SIZE(b.m_ifetch_buffer_size), DISPATCH_BUFFER_SIZE(b.m_dispatch_buffer_size), DECODE_BUFFER_SIZE(b.m_decode_buffer_size),
+      ROB_SIZE(b.m_rob_size), SQ_SIZE(b.m_sq_size), FETCH_WIDTH(b.m_fetch_width), DECODE_WIDTH(b.m_decode_width), DISPATCH_WIDTH(b.m_dispatch_width),
+      SCHEDULER_SIZE(b.m_schedule_width), EXEC_WIDTH(b.m_execute_width), LQ_WIDTH(b.m_lq_width), SQ_WIDTH(b.m_sq_width), RETIRE_WIDTH(b.m_retire_width),
+      BRANCH_MISPREDICT_PENALTY(b.m_mispredict_penalty), DISPATCH_LATENCY(b.m_dispatch_latency), DECODE_LATENCY(b.m_decode_latency),
+      SCHEDULING_LATENCY(b.m_schedule_latency), EXEC_LATENCY(b.m_execute_latency), L1I_BANDWIDTH(b.m_l1i_bw), L1D_BANDWIDTH(b.m_l1d_bw),
+      L1I_bus(b.m_cpu, b.m_fetch_queues), L1D_bus(b.m_cpu, b.m_data_queues), l1i(b.m_l1i), module_pimpl(std::make_unique<module_model<B_FLAG, T_FLAG>>(this))
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
     {
     }
 };

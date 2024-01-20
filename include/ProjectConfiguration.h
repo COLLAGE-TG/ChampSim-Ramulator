@@ -17,14 +17,14 @@
 #define MEMORY_USE_HYBRID                    (ENABLE) // Whether use hybrid memory system instead of single memory systems
 #define PRINT_STATISTICS_INTO_FILE           (ENABLE)  // Whether print simulation statistics into files
 #define PRINT_MEMORY_TRACE                   (DISABLE)  // Whether print memory trace into files
-#define MEMORY_USE_SWAPPING_UNIT             (DISABLE)  // Whether memory controller uses swapping unit to swap data (data swapping overhead is considered)
-#define MEMORY_USE_OS_TRANSPARENT_MANAGEMENT (DISABLE)  // Whether memory controller uses OS-transparent management designs to simulate the memory system instead of static (no-migration) methods
+#define MEMORY_USE_SWAPPING_UNIT             (ENABLE)  // Whether memory controller uses swapping unit to swap data (data swapping overhead is considered)
+#define MEMORY_USE_OS_TRANSPARENT_MANAGEMENT (ENABLE)  // Whether memory controller uses OS-transparent management designs to simulate the memory system instead of static (no-migration) methods
 #define CPU_USE_MULTIPLE_CORES               (DISABLE) // Whether CPU uses multiple cores to run simulation (go to include/ChampSim/champsim_constants.h to check related parameters)
 
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 #define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
-#define GC_MIGRATION_WITH_GC       (ENABLE)
+#define GC_MIGRATION_WITH_GC       (DISABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
 #endif
@@ -64,7 +64,8 @@
 #define COLOCATED_LINE_LOCATION_TABLE  (DISABLE)
 #define IDEAL_VARIABLE_GRANULARITY     (DISABLE)
 #define IDEAL_SINGLE_MEMPOD            (DISABLE)
-#define HISTORY_BASED_PAGE_SELECTION   (ENABLE)
+#define HISTORY_BASED_PAGE_SELECTION   (DISABLE)
+#define NO_MIGRATION (DISABLE) // 応急処置　HISTORY_BASED_PAGE_SELECTIOINの閾値を無限にする
 
 #define TRACKING_LOAD_STORE_STATISTICS (DISABLE) //HISTORY BASEDでは使えない
 
@@ -82,6 +83,7 @@
 #if (IDEAL_LINE_LOCATION_TABLE == ENABLE) || (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
 #define HOTNESS_THRESHOLD (1u)
 #define BITS_MANIPULATION (DISABLE)
+
 #elif (IDEAL_VARIABLE_GRANULARITY == ENABLE)
 #define HOTNESS_THRESHOLD            (1u) // Default: 1/4
 #define DATA_EVICTION                (ENABLE)
@@ -90,10 +92,11 @@
 #define FLEXIBLE_GRANULARITY         (ENABLE)
 #define IMMEDIATE_EVICTION           (DISABLE)
 #define COLD_DATA_DETECTION_IN_GROUP (DISABLE)
+
 #elif (IDEAL_SINGLE_MEMPOD == ENABLE)
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
+
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-#define HOTNESS_THRESHOLD (1u)
 #define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
@@ -103,14 +106,20 @@
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define HOTNESS_THRESHOLD_WITH_GC (1u) // gcと同時にマイグレーションするときのhotness閾値
 #endif // GC_MIGRATION_WITH_GC
-#else
+#if (NO_MIGRATION==ENABLE) //マイグレーションを起こさない
+#define HOTNESS_THRESHOLD (32768u)
+#else // NO_MIGRATION
 #define HOTNESS_THRESHOLD (1u)
-#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_VARIABLE_GRANULARITY, IDEAL_SINGLE_MEMPOD
+#endif //NO_MIGRATION
+
+#elif (NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)
+#define HOTNESS_THRESHOLD (1u) // 使われない
+#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE, IDEAL_VARIABLE_GRANULARITY, IDEAL_SINGLE_MEMPOD, HISTORY_BASED_PAGE_SELECTION
 
 // Check
-#if (NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)
-#error OS-transparent management designs need to be enabled.
-#endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE
+// #if (NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)
+// #error OS-transparent management designs need to be enabled.
+// #endif // IDEAL_LINE_LOCATION_TABLE, COLOCATED_LINE_LOCATION_TABLE
 
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
@@ -223,6 +232,7 @@ public:
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     uint64_t sum_migration_with_gc_count;
     uint64_t migration_cycles_with_gc;
+    uint64_t gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb;
 #endif // GC_MIGRATION_WITH_GC
 #endif // GC_TRACE
     uint64_t remapping_request_queue_congestion;

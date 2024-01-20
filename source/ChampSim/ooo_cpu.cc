@@ -503,6 +503,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         std::cout << "migration_with_gc_count " << migration_with_gc_count << std::endl;
         std::cout << "migration_with_gc_cycle " << migration_with_gc_cycle << std::endl; 
         std::cout << "migration_with_gc_tlb_cycle " << migration_with_gc_tlb_cycle << std::endl; 
+        os_transparent_management->gcmigration_tlb_overhead += migration_with_gc_tlb_cycle;
         // debug
 
         // GC_start時のcurrent_cycleを記録
@@ -528,6 +529,12 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // サイクル数の調整
         if(migration_with_gc_cycle > gc_cycle) {
             current_cycle = gc_start_cycle + migration_with_gc_cycle;
+            // debug
+            uint64_t diff_gcmigration = migration_with_gc_cycle-gc_cycle;
+            std::cout << "GC migrationの方が時間がかかっています" << std::endl;
+            std::cout << "migration_with_gc_cycle - gc_cycle = " << diff_gcmigration << std::endl;
+            // debug
+            os_transparent_management->gcmigration_sum_overhead_without_tlb += diff_gcmigration;
         }
         // elseは何もしない
 
@@ -1247,7 +1254,7 @@ long O3_CPU::retire_rob()
     auto retire_count = std::distance(retire_begin, retire_end);
     num_retired += retire_count;
     ROB.erase(retire_begin, retire_end);
-
+#if(HISTORY_BASED_PAGE_SELECTION == ENABLE)
     // taiga added
     // migration?
     static uint64_t pre_instr = 0;
@@ -1270,6 +1277,7 @@ long O3_CPU::retire_rob()
     }
     
     // taiga added
+#endif // HISTORY_BASED_PAGE_SELECTION
 
     return retire_count;
 }
