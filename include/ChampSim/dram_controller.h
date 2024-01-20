@@ -220,11 +220,13 @@ MEMORY_CONTROLLER<T, T2>::MEMORY_CONTROLLER(double freq_scale, double clock_scal
     swapping_count = swapping_traffic_in_bytes = 0;
 #endif // MEMORY_USE_SWAPPING_UNIT
 
+#if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
 #if (GC_TRACE == ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
     migration_with_gc_count = 0;
-#endif
 #endif // GC_TRACE
+#endif // GC_MIGRATION_WITH_GC
+#endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
     load_request_in_memory = load_request_in_memory2 = 0;
@@ -627,7 +629,7 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
 #endif // TRACKING_LOAD_STORE_STATISTICS
 #endif // MEMORY_USE_OS_TRANSPARENT_MANAGEMENT
 
-// #if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
+#if (MEMORY_USE_SWAPPING_UNIT == ENABLE)
 // #if (HISTORY_BASED_PAGE_SELECTION == ENABLE) //この部分は不安が残る。サイクル数をインクリメントする必要があるかどうかも気になる。
 //     // swapが終わるまで待機
 //     // for debug
@@ -673,7 +675,6 @@ bool MEMORY_CONTROLLER<T, T2>::add_rq(request_type& packet, champsim::channel* u
 //         break;
 //     }
 // #endif //HISTORY_BASED_PAGE_SELECTION
-// #endif // MEMORY_USE_SWAPPING_UNIT
 // for debug
 if(states==SwappingState::Swapping) {
     std::cout << "add_rq while swapping" << std::endl;
@@ -707,6 +708,7 @@ if(states==SwappingState::Swapping) {
     default:
         break;
     }
+#endif // MEMORY_USE_SWAPPING_UNIT
 // ---------------------------
     DRAM_CHANNEL::request_type rq_it = DRAM_CHANNEL::request_type {packet};
     rq_it.forward_checked            = false;
