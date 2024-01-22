@@ -24,7 +24,7 @@
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 #define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
-#define GC_MIGRATION_WITH_GC       (DISABLE)
+#define GC_MIGRATION_WITH_GC       (ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
 #endif
@@ -64,7 +64,7 @@
 #define COLOCATED_LINE_LOCATION_TABLE  (DISABLE)
 #define IDEAL_VARIABLE_GRANULARITY     (DISABLE)
 #define IDEAL_SINGLE_MEMPOD            (DISABLE)
-#define HISTORY_BASED_PAGE_SELECTION   (DISABLE)
+#define HISTORY_BASED_PAGE_SELECTION   (ENABLE)
 #define NO_MIGRATION (DISABLE) // 応急処置　HISTORY_BASED_PAGE_SELECTIOINの閾値を無限にする
 
 #define TRACKING_LOAD_STORE_STATISTICS (DISABLE) //HISTORY BASEDでは使えない
@@ -98,11 +98,11 @@
 
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
 #define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
-#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
+#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
 // #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
-#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (20000) //cycles
+#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (14000) //cycles
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define HOTNESS_THRESHOLD_WITH_GC (1u) // gcと同時にマイグレーションするときのhotness閾値
 #endif // GC_MIGRATION_WITH_GC

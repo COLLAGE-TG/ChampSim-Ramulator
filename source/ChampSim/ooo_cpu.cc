@@ -539,7 +539,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // elseは何もしない
 
         // TLBのオーバーヘッドを追加
-        current_cycle = migration_with_gc_tlb_cycle;
+        current_cycle += migration_with_gc_tlb_cycle;
     }
     if(rob_entry.is_gc_rtn_sweep_end == 1) {
         // degug
@@ -577,7 +577,7 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
     // ファイルからデータを読み込む
     std::string line, pre_line;
     bool read_flag = false;
-    // bool full_gc_flag = false;
+    bool full_gc_flag = false;
 
     bool twice_repeat = false; // for error check
 #if (GC_MARKED_OBJECT == ENABLE)
@@ -605,7 +605,7 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
             if(gc_count != 1) {
                 if(pre_line == "FULL_GC_START") {
                     std::cout << "full gc(ooo_cpu.h)" << std::endl;
-                    // full_gc_flag = true;
+                    full_gc_flag = true;
                     break; //full gc なら終了
                 }
             }
@@ -738,7 +738,7 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
                 if(gc_count != 1) {
                     if(pre_line == "FULL_GC_START") {
                         std::cout << "full gc(ooo_cpu.h)" << std::endl;
-                        // full_gc_flag = true;
+                        full_gc_flag = true;
                         break; //full gc なら終了
                     }
                 }

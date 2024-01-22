@@ -36,12 +36,12 @@
 #define HOTNESS_DEFAULT_VALUE                 (false)
 
 // #define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
-#define CLEAR_COUNTER_TABLE_EPOCH_NUM         (10) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
+// #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 
 // overheads
-#define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
+// #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
 // #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
-#define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (20000) //cycles
+// #define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (14000) //cycles 20000 -> 14000
 
 #define REMAPPING_LOCATION_WIDTH              uint8_t
 #define REMAPPING_LOCATION_WIDTH_BITS         (3) // Default: 3

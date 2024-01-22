@@ -171,7 +171,7 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
         migration_cycles_with_gc = (OVERHEAD_OF_MIGRATION_PER_PAGE + OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE) * sum_migration_with_gc_count;
         fprintf(file_handler, "migration_with_gc_count: %ld migration_cycles_with_gc %ld.\n", sum_migration_with_gc_count, migration_cycles_with_gc);  
         // debug
-        fprintf(file_handler, "gcmigration_tlb_overhead  %ld, gcmigration_sum_overhead_without_tlb %ld", gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb);
+        fprintf(file_handler, "gcmigration_tlb_overhead  %ld, gcmigration_sum_overhead_without_tlb %ld\n", gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb);
         // debug   
 #endif // GC_MIGRATION_WITH_GC
 

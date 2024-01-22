@@ -119,19 +119,19 @@
             "miDebuggerPath": "/usr/bin/gdb" // The path of debugger. e.g., /usr/local/bin/gdb, /usr/bin/gdb
         },
         {
-            "name": "(gdb) Launch for champsim_plus_ramulator with single cores tmp. Trace is test1",
+            "name": "(gdb) Launch for champsim_plus_ramulator with single cores tmp. Trace is new_seq",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/champsim_plus_ramulator", // the executable file's name for debugging
             // Below are parmeters input into the executable file
             "args": [
                 "--warmup-instructions",
-                "10000", // 1000000
+                "0", // 1000000
                 "--simulation-instructions",
-                "1000000000",
+                "40000000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
-                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/test1_10000_100000000.champsim.xz"
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/traces/new_seq_benchmark_0_200000000_unmarked.champsim.xz"
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
@@ -227,7 +227,7 @@
             "name": "(gdb) ./testnew.out for testnew.c",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tmp_benchmark/ex_files/./testnew.out", // the executable file's name for debugging
+            "program": "${workspaceFolder}/tmp_benchmark/ex_files/./dummy_seq_benchmark.out", // the executable file's name for debugging
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
