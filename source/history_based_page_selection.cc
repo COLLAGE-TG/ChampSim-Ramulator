@@ -120,6 +120,10 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
         return a.second > b.second;
     });
 
+    // taiga debug
+    std::cout << "======== hot page : access count ========" << std::endl;
+    // taiga debug
+
     // hotness tableを更新
     for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
         // check
@@ -134,6 +138,15 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
         if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD) {
             break;
         }
+        // taiga debug
+        // 低速メモリにあったら
+        if(remapping_data_block_table.at(tmp_pages_and_count.at(i).first).first >= fast_memory_capacity_at_data_block_granularity) {
+            std::cout << tmp_pages_and_count.at(i).first << " : " << tmp_pages_and_count.at(i).second << " (in slow memory)" << std::endl;
+        }
+        else {
+            std::cout << tmp_pages_and_count.at(i).first << " : " << tmp_pages_and_count.at(i).second << std::endl;
+        }
+        // taiga debug
         uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
         hotness_table.at(tmp_hotpage_data_block_address) = true;
         hotness_data_block_address_queue.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
@@ -183,6 +196,11 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
         hotness_data_block_address_queue_with_gc.pop();
     }
 
+    for(uint64_t i = 0; i < unmarked_pages.size(); i++) {
+        uint64_t tmp_unmarked_page = unmarked_pages.at(i);
+        counter_table.at(tmp_unmarked_page) = 0; // ガベージコレクションされたページはカウンターを０にする
+    }
+
     std::vector<std::pair<uint64_t, uint64_t>> tmp_pages_and_count(counter_table.size()); //this.first = （physical_data_block_address）, this.second = （counter）
     // counter_tableを複製
     for(uint64_t i =0; i < tmp_pages_and_count.size(); i++) {
@@ -190,22 +208,14 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
         tmp_pages_and_count.at(i).second = counter_table.at(i);
     }
 
-    // unmarked_pageならtmp_pages_and_count.at(i).secondの値を0にする。それによってhotness_tableには入らない
-    // debug
-    // std::cout << "==============print unmarked pages=============" << std::endl;
-    // debug
-    for(uint64_t i = 0; i < unmarked_pages.size(); i++) {
-        uint64_t tmp_unmarked_page = unmarked_pages.at(i);
-        tmp_pages_and_count.at(tmp_unmarked_page).second = 0;
-        // debug
-        // std::cout << tmp_unmarked_page << std::endl;
-        // debug
-    }
-
     // ペアをsecond要素で降順ソート
     std::sort(tmp_pages_and_count.begin(), tmp_pages_and_count.end(), [](const auto& a, const auto& b) {
         return a.second > b.second;
     });
+
+    // taiga debug
+    std::cout << "======== hot page : access count ========" << std::endl;
+    // taiga debug
 
     // hotness tableを更新
     for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
@@ -219,8 +229,20 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
 
         // カウンターがHOTNESS_THRESHOLD_WITH_GC以下なら終了
         if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD_WITH_GC) {
+            // taiga debug
+            std::cout << "hotpages num = " << i << std::endl;
+            // taiga debug
             break;
         }
+        // taiga debug
+        // 低速メモリにあったら
+        if(remapping_data_block_table.at(tmp_pages_and_count.at(i).first).first >= fast_memory_capacity_at_data_block_granularity) {
+            std::cout << tmp_pages_and_count.at(i).first << " : " << tmp_pages_and_count.at(i).second << " (in slow memory)" << std::endl;
+        }
+        else {
+            std::cout << tmp_pages_and_count.at(i).first << " : " << tmp_pages_and_count.at(i).second << std::endl;
+        }
+        // taiga debug
         uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
         hotness_table_with_gc.at(tmp_hotpage_data_block_address) = true;
         hotness_data_block_address_queue_with_gc.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
@@ -737,6 +759,9 @@ bool OS_TRANSPARENT_MANAGEMENT::issue_remapping_request(RemappingRequest& remapp
 
 bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
 {
+    // taiga debug
+    // std::cout << "========= remapping address(physical) : access_conter =========" << std::endl;
+    // taiga debug
     if (remapping_request_queue.empty() == false)
     {
         RemappingRequest remapping_request = remapping_request_queue.front();
@@ -760,6 +785,14 @@ bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
             std::cout << "ERROR:data_block_address_in_fm == data_block_address_in_sm" << std::endl;
             abort();
         }
+
+        // taiga debug
+        // std::cout << "------------------------------------------------------------------------------" << std::endl;
+        // std::cout << data_block_address_in_fm << ":" << counter_table.at(data_block_address_in_fm) << std::endl;
+        // std::cout << data_block_address_in_sm << ":" << counter_table.at(data_block_address_in_sm) << std::endl;
+        // std::cout << "------------------------------------------------------------------------------" << std::endl;
+        // taiga debug
+
         // データswap
         uint64_t tmp_data_block_address = remapping_data_block_table.at(data_block_address_in_fm).first;
         remapping_data_block_table.at(data_block_address_in_fm).first = remapping_data_block_table.at(data_block_address_in_sm).first;
@@ -863,6 +896,10 @@ bool OS_TRANSPARENT_MANAGEMENT::enqueue_remapping_request(RemappingRequest& rema
                 std::cout << "remapping_data_block_table.at(data_block_address_in_sm).first " << remapping_data_block_table.at(data_block_address_in_sm).first << std::endl;
                 exit(1);
             }
+
+            // taiga debug
+            
+            // taiga debug
 
             // Enqueue a remapping request
             remapping_request_queue.push_back(remapping_request);

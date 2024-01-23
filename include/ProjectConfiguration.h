@@ -97,7 +97,7 @@
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
 
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-#define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define EPOCH_LENGTH                          (20000000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles

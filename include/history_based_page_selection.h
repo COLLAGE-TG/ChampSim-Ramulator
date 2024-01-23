@@ -89,7 +89,7 @@ public:
     bool first_swap_epoch_for_dram_controller = true;
 #endif
 
-    std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block
+    std::vector<COUNTER_WIDTH>& counter_table; // A counter for every data block インデックスは物理アドレス（ページ単位）
     std::vector<HOTNESS_WIDTH>& hotness_table; // A hotness bit for every data block, true -> data block is hot, false -> data block is cold.
 
 

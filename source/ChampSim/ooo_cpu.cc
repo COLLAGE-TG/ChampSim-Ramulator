@@ -925,8 +925,11 @@ std::vector<uint64_t> O3_CPU::find_marked_pages()
             // taiga debug
         }
     }
-#endif // GC_MARKED_OBJECT
 
+#endif // GC_MARKED_OBJECT
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+    is_full_gc = full_gc_flag; // full gcかどうかを知らせる
+#endif // GC_MIGRATION_WITH_GC
     gc_count = gc_count + 1;
 #if (GC_MARKED_OBJECT == ENABLE)
     return p_marked_pages;
@@ -940,6 +943,12 @@ uint64_t O3_CPU::migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPAR
     // std::cout << "migration_with_gc here" << std::endl;
     // std::cout << "fast memory capacity " << os_transparent_management->fast_memory_capacity << std::endl;
     // std::cout << "epoch count " << os_transparent_management->epoch_count << std::endl;
+
+    // full gcならスキップ
+    if(is_full_gc) {
+        is_full_gc = false;
+        return count_of_migrations;
+    }
 
     // taiga debug
 #if (TEST_HISTORY_WITH_GC == ENABLE)

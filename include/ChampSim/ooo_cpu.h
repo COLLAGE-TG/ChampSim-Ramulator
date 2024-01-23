@@ -223,6 +223,7 @@ public:
     uint64_t migration_with_gc(std::vector<std::uint64_t> pages, OS_TRANSPARENT_MANAGEMENT* os_transparent_management);
     uint64_t gc_start_cycle, gc_end_cycle, gc_cycle, migration_with_gc_cycle, migration_with_gc_count, migration_with_gc_tlb_cycle;
     uint64_t gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb;
+    bool is_full_gc;
 #if (PRINT_V_ADDRESS == ENABLE)
     // static bool first_file_open_p_v_a = true;
     // std::string print_v_address_filename = "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_print_v_address.txt";
