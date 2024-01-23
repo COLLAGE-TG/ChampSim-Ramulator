@@ -27,6 +27,9 @@
 #define GC_MIGRATION_WITH_GC       (ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
+#define DISTANCE_MIGRATION (1000000) // マイグレーションの最低間隔(命令数）
+#define MIN_ACCESS_COUNT_GCM (128) // GCマイグレーション時にこの値を超えていないとマイグレーションしない
+#define MAX_PAGES_GCM (300) // GCマイグレーションする最大ページ数
 #endif
 /** taiga debug */
 #define CHECK_INSTR_ADDRESS (DISABLE) //命令がアクセスする物理アドレスを出力

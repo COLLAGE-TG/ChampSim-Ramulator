@@ -471,10 +471,21 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     }
 // taiga added
 #if (GC_MIGRATION_WITH_GC == ENABLE)
+    
+    static bool migration_d_is_short = false;
     if(rob_entry.is_gc_rtn_start == 1) {
         // degug
-        std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
+        if(num_retired - os_transparent_management->pre_migration_instr <= DISTANCE_MIGRATION) {
+            std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
+            std::cout << "マイグレーション間隔が短いのでマイグレーションを行いません。" << std::endl;
+            migration_d_is_short = true;
+            return;
+        }
+        else {
+            std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
+        }
         // degug
+        
 
         // hotness_data_block_address_queueをクリアする
         while(!os_transparent_management->hotness_data_block_address_queue.empty()) {
@@ -514,7 +525,15 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     }
     if(rob_entry.is_gc_rtn_end == 1) {
         // degug
-        std::cout << "is_gc_rtn_end == 1(ooo_cpu.cc)" << std::endl;
+        if(migration_d_is_short) {
+            std::cout << "is_gc_rtn_end == 1(ooo_cpu.cc)" << std::endl;
+            std::cout << "マイグレーションは行っていません。" << std::endl;
+            migration_d_is_short = false;
+            return; // 終了
+        }
+        else {
+            std::cout << "is_gc_rtn_end == 1(ooo_cpu.cc)" << std::endl;
+        }
         // degug
         // サイクル数を計算して修正
         gc_end_cycle = current_cycle;
@@ -1270,7 +1289,7 @@ long O3_CPU::retire_rob()
     // taiga added
     // migration?
     static uint64_t pre_instr = 0;
-    if(num_retired - pre_instr > EPOCH_LENGTH) {
+    if(num_retired - pre_instr > EPOCH_LENGTH && num_retired - os_transparent_management->pre_migration_instr > DISTANCE_MIGRATION) {
         // taiga debug
         std::cout << "num_retired " << num_retired << std::endl;
         // taiga debug
