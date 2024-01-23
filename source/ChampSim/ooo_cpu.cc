@@ -493,6 +493,9 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         std::thread thread2([this, unmarked_pages] {migration_with_gc_count = migration_with_gc(unmarked_pages, os_transparent_management); });
         thread2.join();
 #endif // GC_MARKED_OBJECT
+        // カウンターテーブルをクリア
+        // CLEAR_COUNTER_TABLE_EPOCH_NUMエポック毎に行う
+        os_transparent_management->initialize_counter_table(os_transparent_management->counter_table);
 
         // GC中のマイグレーションにかかったサイクル数を計算
         migration_with_gc_cycle = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_with_gc_count;
