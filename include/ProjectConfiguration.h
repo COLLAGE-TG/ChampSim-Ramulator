@@ -24,13 +24,14 @@
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 #define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
-#define GC_MIGRATION_WITH_GC       (ENABLE)
+#define GC_MIGRATION_WITH_GC       (DISABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
-#define DISTANCE_MIGRATION (1000000) // マイグレーションの最低間隔(命令数）
 #define MIN_ACCESS_COUNT_GCM (128) // GCマイグレーション時にこの値を超えていないとマイグレーションしない
-#define MAX_PAGES_GCM (300) // GCマイグレーションする最大ページ数
+#define MAX_PAGES_GCM (150) // GCマイグレーションする最大ページ数
 #endif
+#define DISTANCE_MIGRATION (3000000) // マイグレーションの最低間隔(命令数）
+
 /** taiga debug */
 #define CHECK_INSTR_ADDRESS (DISABLE) //命令がアクセスする物理アドレスを出力
 #define PRINT_V_ADDRESS (DISABLE) //仮想アドレスを出力（失敗）
@@ -100,7 +101,7 @@
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
 
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-#define EPOCH_LENGTH                          (20000000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles

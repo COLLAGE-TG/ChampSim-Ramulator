@@ -508,6 +508,8 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // CLEAR_COUNTER_TABLE_EPOCH_NUMエポック毎に行う
         os_transparent_management->initialize_counter_table(os_transparent_management->counter_table);
 
+        os_transparent_management->pre_migration_instr = num_retired;
+
         // GC中のマイグレーションにかかったサイクル数を計算
         migration_with_gc_cycle = OVERHEAD_OF_MIGRATION_PER_PAGE * migration_with_gc_count;
         migration_with_gc_tlb_cycle = OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_with_gc_count;
@@ -1305,6 +1307,8 @@ long O3_CPU::retire_rob()
             os_transparent_management->initialize_counter_table(os_transparent_management->counter_table);
             os_transparent_management->clear_counter_table_epoch_count = 0;
         }
+
+        os_transparent_management->pre_migration_instr = num_retired;
     }
     
     // taiga added

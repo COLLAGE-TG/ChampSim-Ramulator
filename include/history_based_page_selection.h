@@ -100,8 +100,8 @@ public:
     std::queue<uint64_t> hotness_data_block_address_queue_with_gc;
     uint64_t sum_migration_with_gc_count = 0;
     uint64_t gcmigration_tlb_overhead, gcmigration_sum_overhead_without_tlb;
-    uint64_t pre_migration_instr = 0; // 以前GCした時を記録（命令）
 #endif // GC_MIGRATION_WITH_GC
+    uint64_t pre_migration_instr = 0; // 以前GCした時を記録（命令）
 
     /* Remapping request */
     struct RemappingRequest

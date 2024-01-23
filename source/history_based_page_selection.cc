@@ -218,7 +218,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
     // taiga debug
 
     // 低速メモリにあるhot_page数をカウント
-    uint8_t num_hotpage_in_sm = 0;
+    uint32_t num_hotpage_in_sm = 0;
 
     // hotness tableを更新
     for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
