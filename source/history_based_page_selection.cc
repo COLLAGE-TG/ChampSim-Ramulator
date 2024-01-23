@@ -217,6 +217,9 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
     std::cout << "======== hot page : access count ========" << std::endl;
     // taiga debug
 
+    // 低速メモリにあるhot_page数をカウント
+    uint8_t num_hotpage_in_sm = 0;
+
     // hotness tableを更新
     for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
         // check
@@ -234,6 +237,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
             // taiga debug
             break;
         }
+
         // taiga debug
         // 低速メモリにあったら
         if(remapping_data_block_table.at(tmp_pages_and_count.at(i).first).first >= fast_memory_capacity_at_data_block_granularity) {
@@ -249,6 +253,12 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
         // debug
         // std::cout << "tmp_hotpage_data_block_address " << tmp_hotpage_data_block_address << "(choose_hotpage_with_sort_with_gc_unmarked)" << std::endl;
         // debug
+
+        // マイグレーションができるhot_page数を制限
+        if(remapping_data_block_table.at(tmp_pages_and_count.at(i).first).first >= fast_memory_capacity_at_data_block_granularity) {
+            num_hotpage_in_sm++;
+            if(num_hotpage_in_sm > MAX_PAGES_GCM) break;
+        }
     }
 
     return true;
