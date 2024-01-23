@@ -230,8 +230,8 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
             }
         }
 
-        // カウンターがHOTNESS_THRESHOLD_WITH_GC以下なら終了
-        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD_WITH_GC) {
+        // カウンターがMIN_ACCESS_COUNT_GCM以下なら終了
+        if(tmp_pages_and_count.at(i).second < MIN_ACCESS_COUNT_GCM) {
             // taiga debug
             std::cout << "hotpages num = " << i << std::endl;
             // taiga debug
