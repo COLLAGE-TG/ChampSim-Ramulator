@@ -24,7 +24,7 @@
 /** Configuration for GC trace */
 #define GC_TRACE           (ENABLE) // traceがGCを含んでいるならENABLE
 #define GC_MARKED_OBJECT           (DISABLE) // ChampSimがmarked_pagesを読むのか（ENABLE）、unmarked_pagesを読むのか
-#define GC_MIGRATION_WITH_GC       (DISABLE)
+#define GC_MIGRATION_WITH_GC       (ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
 #define MIN_ACCESS_COUNT_GCM (128) // GCマイグレーション時にこの値を超えていないとマイグレーションしない
@@ -108,12 +108,14 @@
 // #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
 #define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (14000) //cycles
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-#define HOTNESS_THRESHOLD_WITH_GC (1u) // gcと同時にマイグレーションするときのhotness閾値
+#define HOTNESS_THRESHOLD_WITH_GC (128u) // gcと同時にマイグレーションするときのhotness閾値
+#define COLDNESS_THRESHOLD_WITH_GC (1u)
 #endif // GC_MIGRATION_WITH_GC
 #if (NO_MIGRATION==ENABLE) //マイグレーションを起こさない
 #define HOTNESS_THRESHOLD (32768u)
 #else // NO_MIGRATION
-#define HOTNESS_THRESHOLD (1u)
+#define HOTNESS_THRESHOLD (128u)
+#define COLDNESS_THRESHOLD (1u)
 #endif //NO_MIGRATION
 
 #elif (NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)

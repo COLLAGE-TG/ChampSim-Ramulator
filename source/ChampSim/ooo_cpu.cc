@@ -524,6 +524,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 
         // GC_start時のcurrent_cycleを記録
         gc_start_cycle = current_cycle;
+        gc_start_ins = num_retired;
     }
     if(rob_entry.is_gc_rtn_end == 1) {
         // degug
@@ -539,7 +540,9 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         // degug
         // サイクル数を計算して修正
         gc_end_cycle = current_cycle;
+        gc_end_ins = num_retired;
         gc_cycle = gc_end_cycle - gc_start_cycle;
+        gc_ins = gc_end_ins - gc_start_ins;
         // check
         if(gc_cycle <= 0) {
             std::cout << "ERROR:gc_cycleが不正な値です" << std::endl;
@@ -547,7 +550,8 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         }
 
         // taiga debug
-        std::cout << "gc_cycle " << gc_cycle << std::endl;
+        std::cout << "gc_cycles " << gc_cycle << std::endl;
+        std::cout << "gc_instructions " << gc_ins << std::endl;
         // taiga debug
 
         // サイクル数の調整
