@@ -470,7 +470,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 #endif // USE_VCPKG
     }
 // taiga added
-#if (GC_MIGRATION_WITH_GC == ENABLE)
+#if (GC_MIGRATION_WITH_GC == ENABLE && NO_MIGRATION == DISABLE)
     
     static bool migration_d_is_short = false;
     if(rob_entry.is_gc_rtn_start == 1) {
@@ -1294,12 +1294,12 @@ long O3_CPU::retire_rob()
 #if(HISTORY_BASED_PAGE_SELECTION == ENABLE)
     // taiga added
     // migration?
+#if(NO_MIGRATION == DISABLE)
     static uint64_t pre_instr = 0;
     if(num_retired - pre_instr > EPOCH_LENGTH && num_retired - os_transparent_management->pre_migration_instr > DISTANCE_MIGRATION) {
         // taiga debug
         std::cout << "num_retired " << num_retired << std::endl;
         // taiga debug
-
         os_transparent_management->choose_hotpage_with_sort();
         os_transparent_management->add_new_remapping_request_to_queue(0); // remapping_queueを無視（いつか直す）
         pre_instr = num_retired;
@@ -1314,10 +1314,9 @@ long O3_CPU::retire_rob()
 
         os_transparent_management->pre_migration_instr = num_retired;
     }
-    
+#endif // NO_MIGRATION
     // taiga added
 #endif // HISTORY_BASED_PAGE_SELECTION
-
     return retire_count;
 }
 

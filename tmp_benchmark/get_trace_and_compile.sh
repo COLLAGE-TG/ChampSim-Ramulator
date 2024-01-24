@@ -25,4 +25,5 @@ echo "/usr/bin/time ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out"
 /usr/bin/time ./ex_files/${SAMPLE_FILENAME_NO_DOT}.out
 echo "$PIN_ROOT/pin -t /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tracer/pin/obj-intel64/champsim_tracer.so -o /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/${FILE_NAME} -s ${WARMUP} -t ${SAMPLE_INST} -- /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_benchmark/ex_files/./${SAMPLE_FILENAME_NO_DOT}.out"
 $PIN_ROOT/pin -t /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tracer/pin/obj-intel64/champsim_tracer.so -o /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_trace/${FILE_NAME} -s ${WARMUP} -t ${SAMPLE_INST} -- /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_benchmark/ex_files/./${SAMPLE_FILENAME_NO_DOT}.out
+mv /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_gc_marked_pages_files/tmptest.txt /home/funkytaiga/tmp_champ/ChampSim-Ramulator/tmp_gc_marked_pages_files/${SAMPLE_FILENAME_NO_DOT}_${WARMUP}_${SAMPLE_INST}_unmarked_obj.txt
 xz -f ../tmp_trace/${SAMPLE_FILENAME_NO_DOT}_${WARMUP}_${SAMPLE_INST}.champsim

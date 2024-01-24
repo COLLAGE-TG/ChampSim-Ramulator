@@ -29,7 +29,7 @@
 // #if (IDEAL_LINE_LOCATION_TABLE == ENABLE) || (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
 
 #define COUNTER_WIDTH                         uint16_t // uint8_tから変更を加えた。NOMIGRATIONのため。
-#define COUNTER_MAX_VALUE                     (UINT8_MAX)
+#define COUNTER_MAX_VALUE                     (UINT16_MAX)
 #define COUNTER_DEFAULT_VALUE                 (0)
 
 #define HOTNESS_WIDTH                         bool
