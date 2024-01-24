@@ -536,38 +536,38 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         }
         else {
             std::cout << "is_gc_rtn_end == 1(ooo_cpu.cc)" << std::endl;
-        }
-        // degug
-        // サイクル数を計算して修正
-        gc_end_cycle = current_cycle;
-        gc_end_ins = num_retired;
-        gc_cycle = gc_end_cycle - gc_start_cycle;
-        gc_ins = gc_end_ins - gc_start_ins;
-        // check
-        if(gc_cycle <= 0) {
-            std::cout << "ERROR:gc_cycleが不正な値です" << std::endl;
-            abort();
-        }
+            // degug
+            // サイクル数を計算して修正
+            gc_end_cycle = current_cycle;
+            gc_end_ins = num_retired;
+            gc_cycle = gc_end_cycle - gc_start_cycle;
+            gc_ins = gc_end_ins - gc_start_ins;
+            // check
+            if(gc_cycle <= 0) {
+                std::cout << "ERROR:gc_cycleが不正な値です" << std::endl;
+                abort();
+            }
 
-        // taiga debug
-        std::cout << "gc_cycles " << gc_cycle << std::endl;
-        std::cout << "gc_instructions " << gc_ins << std::endl;
-        // taiga debug
+            // taiga debug
+            std::cout << "gc_cycles " << gc_cycle << std::endl;
+            std::cout << "gc_instructions " << gc_ins << std::endl;
+            // taiga debug
 
-        // サイクル数の調整
-        if(migration_with_gc_cycle > gc_cycle) {
-            current_cycle = gc_start_cycle + migration_with_gc_cycle;
-            // debug
-            uint64_t diff_gcmigration = migration_with_gc_cycle-gc_cycle;
-            std::cout << "GC migrationの方が時間がかかっています" << std::endl;
-            std::cout << "migration_with_gc_cycle - gc_cycle = " << diff_gcmigration << std::endl;
-            // debug
-            os_transparent_management->gcmigration_sum_overhead_without_tlb += diff_gcmigration;
+            // サイクル数の調整
+            if(migration_with_gc_cycle > gc_cycle) {
+                current_cycle = gc_start_cycle + migration_with_gc_cycle;
+                // debug
+                uint64_t diff_gcmigration = migration_with_gc_cycle-gc_cycle;
+                std::cout << "GC migrationの方が時間がかかっています" << std::endl;
+                std::cout << "migration_with_gc_cycle - gc_cycle = " << diff_gcmigration << std::endl;
+                // debug
+                os_transparent_management->gcmigration_sum_overhead_without_tlb += diff_gcmigration;
+            }
+            // elseは何もしない
+
+            // TLBのオーバーヘッドを追加
+            current_cycle += migration_with_gc_tlb_cycle;
         }
-        // elseは何もしない
-
-        // TLBのオーバーヘッドを追加
-        current_cycle += migration_with_gc_tlb_cycle;
     }
     if(rob_entry.is_gc_rtn_sweep_end == 1) {
         // degug

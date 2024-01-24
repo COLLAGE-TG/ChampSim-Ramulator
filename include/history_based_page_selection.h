@@ -151,7 +151,11 @@ public:
 // map<uint64_t physical_page_address, uint64_t hardware_page_address> remapping_table
 // map<uint64_t physical_page_address, uint64_t access_count> page_access_count_table
 // 元のアドレス->physical_page_address、リマッピング後のアドレス->hardware_page_address
-std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : physical page block address, value : (hardware page block address, valid_bit)
+
+// std::vector<std::pair<uint64_t, bool>>& remapping_data_block_table; //index : physical page block address, value : (hardware page block address, valid_bit)
+// taiga debug リマッピングテーブルを書き換えた（上のやつと）
+std::vector<std::pair<uint64_t, uint8_t>>& remapping_data_block_table; // .secondは0ならfalse、1なら普通にアクセス、2なら通常マイグレーションによって移動、3ならGCマイグレーションによって移動させられた
+// taiga debug
 
 // #if (COLOCATED_LINE_LOCATION_TABLE == ENABLE)
 //     /** @brief

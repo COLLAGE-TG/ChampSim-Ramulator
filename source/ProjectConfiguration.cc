@@ -157,6 +157,10 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
         fprintf(file_handler, "read_request_in_memory: %ld, read_request_in_memory2: %ld.\n", read_request_in_memory, read_request_in_memory2);
         fprintf(file_handler, "write_request_in_memory: %ld, write_request_in_memory2: %ld.\n", write_request_in_memory, write_request_in_memory2);
         fprintf(file_handler, "hit rate: %f.\n", (read_request_in_memory + write_request_in_memory) / float(total_access_request_in_memory));
+        fprintf(file_handler, "read_request_in_memory: %ld, read_request_in_memory2: %ld.\n", migration_read_request_in_memory, migration_read_request_in_memory2);
+        fprintf(file_handler, "write_request_in_memory: %ld, write_request_in_memory2: %ld.\n", migration_write_request_in_memory, migration_write_request_in_memory2);
+        fprintf(file_handler, "read_request_in_memory: %ld, read_request_in_memory2: %ld.\n", gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2);
+        fprintf(file_handler, "write_request_in_memory: %ld, write_request_in_memory2: %ld.\n", gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2);
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
         fprintf(file_handler, "load_request_in_memory: %ld, load_request_in_memory2: %ld.\n", load_request_in_memory, load_request_in_memory2);
         fprintf(file_handler, "store_request_in_memory: %ld, store_request_in_memory2: %ld.\n", store_request_in_memory, store_request_in_memory2);

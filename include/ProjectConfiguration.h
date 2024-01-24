@@ -225,6 +225,11 @@ public:
     uint64_t read_request_in_memory, read_request_in_memory2;
     uint64_t write_request_in_memory, write_request_in_memory2;
 
+    // taiga debug
+    uint64_t migration_read_request_in_memory, migration_read_request_in_memory2, gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2;
+    uint64_t migration_write_request_in_memory, migration_write_request_in_memory2, gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2;
+    // taiga debug
+
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
     uint64_t load_request_in_memory, load_request_in_memory2;
     uint64_t store_request_in_memory, store_request_in_memory2;

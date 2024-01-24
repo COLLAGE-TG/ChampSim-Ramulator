@@ -144,6 +144,11 @@ public:
     uint64_t read_request_in_memory, read_request_in_memory2;
     uint64_t write_request_in_memory, write_request_in_memory2;
 
+    // taiga debug
+    uint64_t migration_read_request_in_memory, migration_read_request_in_memory2, gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2;
+    uint64_t migration_write_request_in_memory, migration_write_request_in_memory2, gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2;
+    // taiga debug
+
     /* Member functions */
     MEMORY_CONTROLLER(double freq_scale, double clock_scale, double clock_scale2, std::vector<channel_type*>&& ul, ramulator::Memory<T, ramulator::Controller>& memory, ramulator::Memory<T2, ramulator::Controller>& memory2);
     ~MEMORY_CONTROLLER();
@@ -280,6 +285,10 @@ MEMORY_CONTROLLER<T, T2>::~MEMORY_CONTROLLER()
     output_statistics.read_request_in_memory2  = read_request_in_memory2;
     output_statistics.write_request_in_memory  = write_request_in_memory;
     output_statistics.write_request_in_memory2 = write_request_in_memory2;
+    output_statistics.migration_read_request_in_memory   = migration_read_request_in_memory;
+    output_statistics.migration_read_request_in_memory2  = migration_read_request_in_memory2;
+    output_statistics.gcmigration_write_request_in_memory  = gcmigration_write_request_in_memory;
+    output_statistics.gcmigration_write_request_in_memory2 = gcmigration_write_request_in_memory2;
 
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     delete &os_transparent_management;
@@ -762,6 +771,18 @@ if(states==SwappingState::Swapping) {
         if (stall == false)
         {
             read_request_in_memory++;
+            // taiga debug
+            uint64_t check_m_p_data_block = packet.address >> DATA_MANAGEMENT_OFFSET_BITS;
+            if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 2) {
+                migration_read_request_in_memory += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
+                gcmigration_read_request_in_memory += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
+                std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
+            }
+            // taiga debug
 
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
             if (warmup == false)
@@ -801,6 +822,19 @@ if(states==SwappingState::Swapping) {
         if (stall == false)
         {
             read_request_in_memory2++;
+
+            // taiga debug
+            uint64_t check_m_p_data_block = packet.address >> DATA_MANAGEMENT_OFFSET_BITS;
+            if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 2) {
+                migration_read_request_in_memory2 += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
+                gcmigration_read_request_in_memory2 += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
+                std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
+            }
+            // taiga debug
         }
 
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
@@ -926,6 +960,18 @@ bool MEMORY_CONTROLLER<T, T2>::add_wq(request_type& packet)
         if (stall == false)
         {
             write_request_in_memory++;
+            // taiga debug
+            uint64_t check_m_p_data_block = packet.address >> DATA_MANAGEMENT_OFFSET_BITS;
+            if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 2) {
+                migration_write_request_in_memory += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
+                gcmigration_write_request_in_memory += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
+                std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
+            }
+            // taiga debug
         }
     }
     else if (address < memory.max_address + memory2.max_address)
@@ -937,6 +983,18 @@ bool MEMORY_CONTROLLER<T, T2>::add_wq(request_type& packet)
         if (stall == false)
         {
             write_request_in_memory2++;
+            // taiga debug
+            uint64_t check_m_p_data_block = packet.address >> DATA_MANAGEMENT_OFFSET_BITS;
+            if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 2) {
+                migration_write_request_in_memory2 += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
+                gcmigration_write_request_in_memory2 += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
+                std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
+            }
+            // taiga debug
         }
     }
     else
@@ -1233,7 +1291,9 @@ void MEMORY_CONTROLLER<T, T2>::migration_all_start()
         // 両方の有効bitがtrueならmigration回数は2回
         uint64_t data_address_in_fm = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
         uint64_t data_address_in_sm = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
-        if(os_transparent_management.remapping_data_block_table.at(data_address_in_fm).second == true && os_transparent_management.remapping_data_block_table.at(data_address_in_sm).second == true) {
+        // if(os_transparent_management.remapping_data_block_table.at(data_address_in_fm).second == true && os_transparent_management.remapping_data_block_table.at(data_address_in_sm).second == true) {
+            // taiga debug
+        if(os_transparent_management.remapping_data_block_table.at(data_address_in_fm).second > 0 && os_transparent_management.remapping_data_block_table.at(data_address_in_sm).second > 0) {
             migration_count_between_epoch += 2;
             // check
             if(active_entry_number != 1) {
@@ -1244,6 +1304,11 @@ void MEMORY_CONTROLLER<T, T2>::migration_all_start()
         else {
             migration_count_between_epoch++;
         }
+
+        // taiga debug
+        os_transparent_management.remapping_data_block_table.at(data_address_in_fm).second = 2;
+        os_transparent_management.remapping_data_block_table.at(data_address_in_sm).second = 2;
+        // taiga debug
         // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
         os_transparent_management.finish_remapping_request();
         

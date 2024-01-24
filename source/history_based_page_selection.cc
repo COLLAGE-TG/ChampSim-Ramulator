@@ -13,7 +13,8 @@ OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint6
   counter_table(*(new std::vector<COUNTER_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, COUNTER_DEFAULT_VALUE))),
   hotness_table(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))),
   hotness_table_with_gc(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))), // taiga added
-  remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
+//   remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
+  remapping_data_block_table(*(new std::vector<std::pair<uint64_t, uint8_t>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
 #else
 OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint64_t fast_memory_max_address)
 : total_capacity(max_address), fast_memory_capacity(fast_memory_max_address),
@@ -22,7 +23,8 @@ OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint6
   fast_memory_offset_bit(champsim::lg2(fast_memory_max_address)), // Note here only support integers of 2's power.
   counter_table(*(new std::vector<COUNTER_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, COUNTER_DEFAULT_VALUE))),
   hotness_table(*(new std::vector<HOTNESS_WIDTH>(max_address >> DATA_MANAGEMENT_OFFSET_BITS, HOTNESS_DEFAULT_VALUE))),
-  remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
+//   remapping_data_block_table(*(new std::vector<std::pair<uint64_t, bool>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
+  remapping_data_block_table(*(new std::vector<std::pair<uint64_t, uint8_t>>(max_address >> DATA_MANAGEMENT_OFFSET_BITS)))
 #endif
 {
     hotness_threshold                            = HOTNESS_THRESHOLD; //まずは1に設定しよう
@@ -32,7 +34,10 @@ OS_TRANSPARENT_MANAGEMENT::OS_TRANSPARENT_MANAGEMENT(uint64_t max_address, uint6
     // index : physical page block address, value : hardware page block address
     for(uint64_t i=0;i < max_address >> DATA_MANAGEMENT_OFFSET_BITS; i++) {
         remapping_data_block_table.at(i).first = i;
-        remapping_data_block_table.at(i).second = false;
+        // remapping_data_block_table.at(i).second = false;
+        // taiga debug
+        remapping_data_block_table.at(i).second = 0;
+        // taiga debug
     }
     printf("hotness threshold = %d\n", hotness_threshold);
 };
@@ -316,7 +321,8 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
             continue;
         }
         // 高速メモリ内のデータで有効bitがfalseなら
-        if(remapping_data_block_table.at(p_data_block_address).second == false) {
+        // if(remapping_data_block_table.at(p_data_block_address).second == false) {
+        if(remapping_data_block_table.at(p_data_block_address).second == 0) { // taiga debug
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
             if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) { 
@@ -743,7 +749,11 @@ void OS_TRANSPARENT_MANAGEMENT::physical_to_hardware_address(request_type& packe
 {
     uint64_t data_block_address        = packet.address >> DATA_MANAGEMENT_OFFSET_BITS;
     uint64_t remapping_data_block_address = remapping_data_block_table.at(data_block_address).first;
-    remapping_data_block_table.at(data_block_address).second = true;
+    // remapping_data_block_table.at(data_block_address).second = true;
+    if(remapping_data_block_table.at(data_block_address).second == 0) { // taiga debug
+        remapping_data_block_table.at(data_block_address).second = 1;
+    }
+    
 
     packet.h_address = champsim::replace_bits(remapping_data_block_address << DATA_MANAGEMENT_OFFSET_BITS, packet.address, DATA_MANAGEMENT_OFFSET_BITS - 1);
 };
@@ -752,7 +762,10 @@ void OS_TRANSPARENT_MANAGEMENT::physical_to_hardware_address(uint64_t& address)
 {
     uint64_t data_block_address        = address >> DATA_MANAGEMENT_OFFSET_BITS;
     uint64_t remapping_data_block_address = remapping_data_block_table.at(data_block_address).first;
-    remapping_data_block_table.at(data_block_address).second = true;
+    // remapping_data_block_table.at(data_block_address).second = true;
+    if(remapping_data_block_table.at(data_block_address).second == 0) { // taiga debug
+        remapping_data_block_table.at(data_block_address).second = 1;
+    }
     address = champsim::replace_bits(remapping_data_block_address << DATA_MANAGEMENT_OFFSET_BITS, address, DATA_MANAGEMENT_OFFSET_BITS - 1);
 };
 
@@ -809,7 +822,8 @@ bool OS_TRANSPARENT_MANAGEMENT::finish_remapping_request()
         remapping_data_block_table.at(data_block_address_in_sm).first = tmp_data_block_address;
 
         // valid bit変更
-        bool tmp_valid_bit = remapping_data_block_table.at(data_block_address_in_fm).second;
+        // bool tmp_valid_bit = remapping_data_block_table.at(data_block_address_in_fm).second;
+        uint8_t tmp_valid_bit = remapping_data_block_table.at(data_block_address_in_fm).second;
         remapping_data_block_table.at(data_block_address_in_fm).second = remapping_data_block_table.at(data_block_address_in_sm).second;
         remapping_data_block_table.at(data_block_address_in_sm).second = tmp_valid_bit;
 
@@ -969,7 +983,8 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
         // 両方の有効bitがtrueならmigration回数は2回
         uint64_t data_address_in_fm = remapping_request.address_in_fm >> DATA_MANAGEMENT_OFFSET_BITS;
         uint64_t data_address_in_sm = remapping_request.address_in_sm >> DATA_MANAGEMENT_OFFSET_BITS;
-        if(remapping_data_block_table.at(data_address_in_fm).second == true && remapping_data_block_table.at(data_address_in_sm).second == true) {
+        // if(remapping_data_block_table.at(data_address_in_fm).second == true && remapping_data_block_table.at(data_address_in_sm).second == true) {
+        if(remapping_data_block_table.at(data_address_in_fm).second > 1 && remapping_data_block_table.at(data_address_in_sm).second > 1) { // taiga debug
             migration_count_between_gc += 2;
             // check
             // if(active_entry_number != 1) {
@@ -977,13 +992,19 @@ uint64_t OS_TRANSPARENT_MANAGEMENT::migration_all_start_with_gc()
             // }
             // active_entry_number += 1;
         }
-        else if(remapping_data_block_table.at(data_address_in_fm).second == false && remapping_data_block_table.at(data_address_in_sm).second == false){ //errorチェック
+        // else if(remapping_data_block_table.at(data_address_in_fm).second == false && remapping_data_block_table.at(data_address_in_sm).second == false){ //errorチェック
+        else if(remapping_data_block_table.at(data_address_in_fm).second == 0 && remapping_data_block_table.at(data_address_in_sm).second == 0){ //errorチェック
             std::cout << "ERROR:remapping_request is something wrong" << std::endl;
             exit(1);
         }
         else {
             migration_count_between_gc++;
         }
+
+        // taiga debug
+        remapping_data_block_table.at(data_address_in_fm).second = 3;
+        remapping_data_block_table.at(data_address_in_sm).second = 3;
+        // taiga debug
 
         // remapping_requestからデータをポップして、remapping_data_block_tableの書き換え
         finish_remapping_request();
