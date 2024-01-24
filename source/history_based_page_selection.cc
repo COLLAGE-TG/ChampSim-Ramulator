@@ -379,7 +379,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue(float queue_b
             continue;
         }
         // コールドページかつ高速メモリにあるなら移動
-        if(counter_table.at(p_data_block_address) < HOTNESS_THRESHOLD) {
+        if(counter_table.at(p_data_block_address) < COLDNESS_THRESHOLD) {
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
             if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) { 
@@ -662,7 +662,7 @@ bool OS_TRANSPARENT_MANAGEMENT::add_new_remapping_request_to_queue_with_gc(std::
         }
 #endif // GC_MARKED_OBJECT
         // コールドページなら
-        if(counter_table.at(p_data_block_address) < HOTNESS_THRESHOLD_WITH_GC) {
+        if(counter_table.at(p_data_block_address) < COLDNESS_THRESHOLD_WITH_GC) {
             uint64_t h_data_block_address = remapping_data_block_table.at(p_data_block_address).first;
             // 高速メモリにあるなら
             if(h_data_block_address < fast_memory_capacity_at_data_block_granularity) {
