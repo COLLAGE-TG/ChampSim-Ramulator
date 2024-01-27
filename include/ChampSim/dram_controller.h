@@ -145,8 +145,8 @@ public:
     uint64_t write_request_in_memory, write_request_in_memory2;
 
     // taiga debug
-    uint64_t migration_read_request_in_memory, migration_read_request_in_memory2, gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2;
-    uint64_t migration_write_request_in_memory, migration_write_request_in_memory2, gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2;
+    uint64_t migration_read_request_in_memory, migration_read_request_in_memory2, gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2, nomigration_read_request_in_memory, nomigration_read_request_in_memory2;
+    uint64_t migration_write_request_in_memory, migration_write_request_in_memory2, gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2, nomigration_write_request_in_memory, nomigration_write_request_in_memory2;
     // taiga debug
 
     /* Member functions */
@@ -287,8 +287,17 @@ MEMORY_CONTROLLER<T, T2>::~MEMORY_CONTROLLER()
     output_statistics.write_request_in_memory2 = write_request_in_memory2;
     output_statistics.migration_read_request_in_memory   = migration_read_request_in_memory;
     output_statistics.migration_read_request_in_memory2  = migration_read_request_in_memory2;
+    output_statistics.migration_write_request_in_memory   = migration_write_request_in_memory;
+    output_statistics.migration_write_request_in_memory2  = migration_write_request_in_memory2;
+    output_statistics.gcmigration_read_request_in_memory  = gcmigration_read_request_in_memory;
+    output_statistics.gcmigration_read_request_in_memory2 = gcmigration_read_request_in_memory2;
     output_statistics.gcmigration_write_request_in_memory  = gcmigration_write_request_in_memory;
     output_statistics.gcmigration_write_request_in_memory2 = gcmigration_write_request_in_memory2;
+    output_statistics.nomigration_read_request_in_memory   = nomigration_read_request_in_memory;
+    output_statistics.nomigration_read_request_in_memory2  = nomigration_read_request_in_memory2;
+    output_statistics.nomigration_write_request_in_memory   = nomigration_write_request_in_memory;
+    output_statistics.nomigration_write_request_in_memory2  = nomigration_write_request_in_memory2;
+    
 
 #if (MEMORY_USE_OS_TRANSPARENT_MANAGEMENT == ENABLE)
     delete &os_transparent_management;
@@ -779,6 +788,9 @@ if(states==SwappingState::Swapping) {
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
                 gcmigration_read_request_in_memory += 1;
             }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 1) {
+                nomigration_read_request_in_memory += 1;
+            }
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
                 std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
             }
@@ -830,6 +842,9 @@ if(states==SwappingState::Swapping) {
             }
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
                 gcmigration_read_request_in_memory2 += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 1) {
+                nomigration_read_request_in_memory2 += 1;
             }
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
                 std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
@@ -968,6 +983,9 @@ bool MEMORY_CONTROLLER<T, T2>::add_wq(request_type& packet)
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
                 gcmigration_write_request_in_memory += 1;
             }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 1) {
+                nomigration_write_request_in_memory += 1;
+            }
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
                 std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
             }
@@ -990,6 +1008,9 @@ bool MEMORY_CONTROLLER<T, T2>::add_wq(request_type& packet)
             }
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 3) {
                 gcmigration_write_request_in_memory2 += 1;
+            }
+            else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 1) {
+                nomigration_write_request_in_memory2 += 1;
             }
             else if(os_transparent_management.remapping_data_block_table.at(check_m_p_data_block).second == 0 ) {
                 std::cout << "ERROR:remapping_data_block is wrong?" << std::endl;
@@ -1341,9 +1362,8 @@ void MEMORY_CONTROLLER<T, T2>::migration_all_start()
     std::cout << "migration_count_between_epoch " << migration_count_between_epoch << std::endl;
 // debug
     // migrationにかかったオーバーヘッドを追加
-    current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_epoch;
-    // current_cycle += OVERHEAD_OF_CHANGE_PTE_PER_PAGE * migration_count_between_epoch;
-    current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_epoch;    
+    // current_cycle += OVERHEAD_OF_MIGRATION_PER_PAGE * migration_count_between_epoch;
+    // current_cycle += OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE * migration_count_between_epoch;    
 }
 // // swap操作は全てこの関数で完結させる
 // template<class T, class T2>

@@ -25,6 +25,8 @@ void array_access() {
     ll max_access_one_ws = 10000000; // 一つのワーキングセットに何回アクセスするか
     ll max_num_make_obj = 5000; // 繰り返し
     ll max_num_change_ws = 10; // 繰り返し
+    ll plus_ele_to_array = 10;
+    ll plus_ele_to_obj = 10;
     ll num_cachelines_in_obj = max_access_one_ws / max_num_make_obj; // 一つのオブジェクトに何回アクセスするのか
     ll num_ele_in_obj = num_cachelines_in_obj * num_ele_in_cache;
     // ll num_cachelines_in_obj = num_ele_in_obj / num_ele_in_cache;
@@ -35,8 +37,12 @@ void array_access() {
         exit(1);
     }
 
+    ll array_size = min_array_num_ele;
+    ll obj_size = num_ele_in_obj;
+
     for(int m = 0; m < max_num_change_ws; m++) {
-        ll array_size = (rand() % (min_array_num_ele)) + (min_array_num_ele); // 100ページから200ページのarray
+        // ll array_size = (rand() % (min_array_num_ele)) + (min_array_num_ele); // 100ページから200ページのarray
+        array_size += (plus_ele_to_array * num_ele_in_page);
         ll i_array = 0; // arrayのインデックス
         ll *array = (ll *)GC_MALLOC_ATOMIC(sizeof(ll) * array_size);
         for(ll n = 0; n < max_num_make_obj; n++) {

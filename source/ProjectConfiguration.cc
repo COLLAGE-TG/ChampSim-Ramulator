@@ -65,23 +65,37 @@ void DATA_OUTPUT::output_file_initialization(char** string_array, uint32_t numbe
     benchmark_names += "_unmarked";
 #endif
 
-#if(NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)
-    benchmark_names += "_no_method_migration";
-#endif // NO_METHOD_FOR_RUN_HYBRID_MEMORY
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+    benchmark_names += "_gcmigration";
+#endif
 
 #if (NO_MIGRATION == ENABLE)
     benchmark_names += "_nomigration";
 #else // NO_MIGRATION
 
-#if (GC_MIGRATION_WITH_GC == ENABLE)
-    benchmark_names += "_gcmigration";
-#endif
+#if(NO_METHOD_FOR_RUN_HYBRID_MEMORY == ENABLE)
+    benchmark_names += "_no_method_migration";
+#endif // NO_METHOD_FOR_RUN_HYBRID_MEMORY
 
 #if (HISTORY_BASED_PAGE_SELECTION == ENABLE)
     benchmark_names += "_epoch_";
     benchmark_names += std::to_string(EPOCH_LENGTH);
     benchmark_names += "_cleartable_";
     benchmark_names += std::to_string(CLEAR_COUNTER_TABLE_EPOCH_NUM);
+    benchmark_names += "_mgcoldness_";
+    benchmark_names += std::to_string(COLDNESS_THRESHOLD);
+    benchmark_names += "_mghotness_";
+    benchmark_names += std::to_string(HOTNESS_THRESHOLD);
+    benchmark_names += "_mgmaxpages_";
+    benchmark_names += std::to_string(MAX_PAGES_MIG);
+#endif
+
+#if (GC_MIGRATION_WITH_GC == ENABLE)
+    benchmark_names += "_gcmghotness_";
+    benchmark_names += std::to_string(HOTNESS_THRESHOLD_WITH_GC);
+    benchmark_names += "_gcmgmaxpages_";
+    benchmark_names += std::to_string(MAX_PAGES_GCM);
+    benchmark_names += "_gcmigration";
 #endif
 
 #endif // NO_MIGRATION
@@ -157,10 +171,12 @@ SIMULATOR_STATISTICS::~SIMULATOR_STATISTICS()
         fprintf(file_handler, "read_request_in_memory: %ld, read_request_in_memory2: %ld.\n", read_request_in_memory, read_request_in_memory2);
         fprintf(file_handler, "write_request_in_memory: %ld, write_request_in_memory2: %ld.\n", write_request_in_memory, write_request_in_memory2);
         fprintf(file_handler, "hit rate: %f.\n", (read_request_in_memory + write_request_in_memory) / float(total_access_request_in_memory));
-        fprintf(file_handler, "read_request_in_memory: %ld, read_request_in_memory2: %ld.\n", migration_read_request_in_memory, migration_read_request_in_memory2);
-        fprintf(file_handler, "write_request_in_memory: %ld, write_request_in_memory2: %ld.\n", migration_write_request_in_memory, migration_write_request_in_memory2);
-        fprintf(file_handler, "read_request_in_memory: %ld, read_request_in_memory2: %ld.\n", gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2);
-        fprintf(file_handler, "write_request_in_memory: %ld, write_request_in_memory2: %ld.\n", gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2);
+        fprintf(file_handler, "migration_read_request_in_memory: %ld, migration_read_request_in_memory2: %ld.\n", migration_read_request_in_memory, migration_read_request_in_memory2);
+        fprintf(file_handler, "migration_write_request_in_memory: %ld, migration_write_request_in_memory2: %ld.\n", migration_write_request_in_memory, migration_write_request_in_memory2);
+        fprintf(file_handler, "gcmigration_read_request_in_memory: %ld, gcmigration_read_request_in_memory2: %ld.\n", gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2);
+        fprintf(file_handler, "gcmigration_write_request_in_memory: %ld, gcmigration_write_request_in_memory2: %ld.\n", gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2);
+        fprintf(file_handler, "nomigration_read_request_in_memory: %ld, nomigration_read_request_in_memory2: %ld.\n", nomigration_read_request_in_memory, nomigration_read_request_in_memory2);
+        fprintf(file_handler, "nomigration_write_request_in_memory: %ld, nomigration_write_request_in_memory2: %ld.\n", nomigration_write_request_in_memory, nomigration_write_request_in_memory2);
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
         fprintf(file_handler, "load_request_in_memory: %ld, load_request_in_memory2: %ld.\n", load_request_in_memory, load_request_in_memory2);
         fprintf(file_handler, "store_request_in_memory: %ld, store_request_in_memory2: %ld.\n", store_request_in_memory, store_request_in_memory2);

@@ -519,9 +519,9 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         std::cout << "migration_with_gc_count " << migration_with_gc_count << std::endl;
         std::cout << "migration_with_gc_cycle " << migration_with_gc_cycle << std::endl; 
         std::cout << "migration_with_gc_tlb_cycle " << migration_with_gc_tlb_cycle << std::endl; 
-        os_transparent_management->gcmigration_tlb_overhead += migration_with_gc_tlb_cycle;
-        // debug
 
+        // debug
+        os_transparent_management->gcmigration_tlb_overhead += migration_with_gc_tlb_cycle;
         // GC_start時のcurrent_cycleを記録
         gc_start_cycle = current_cycle;
         gc_start_ins = num_retired;
@@ -555,7 +555,7 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
 
             // サイクル数の調整
             if(migration_with_gc_cycle > gc_cycle) {
-                current_cycle = gc_start_cycle + migration_with_gc_cycle;
+                // current_cycle = gc_start_cycle + migration_with_gc_cycle;
                 // debug
                 uint64_t diff_gcmigration = migration_with_gc_cycle-gc_cycle;
                 std::cout << "GC migrationの方が時間がかかっています" << std::endl;
@@ -565,8 +565,8 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
             }
             // elseは何もしない
 
-            // TLBのオーバーヘッドを追加
-            current_cycle += migration_with_gc_tlb_cycle;
+            // TLBのオーバーヘッドを追加（最後にやることにしました）
+            // current_cycle += migration_with_gc_tlb_cycle;
         }
     }
     if(rob_entry.is_gc_rtn_sweep_end == 1) {

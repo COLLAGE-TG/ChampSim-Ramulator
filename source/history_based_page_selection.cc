@@ -129,6 +129,9 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
     std::cout << "======== hot page : access count ========" << std::endl;
     // taiga debug
 
+    // 低速メモリにあるhot_page数をカウント
+    uint32_t num_hotpage_in_sm = 0;
+
     // hotness tableを更新
     for(uint64_t i = 0; i < fast_memory_capacity_at_data_block_granularity; i++) {
         // check
@@ -144,6 +147,13 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
             break;
         }
         // taiga debug
+        // カウンターがMIN_ACCESS_COUNT_GCM以下なら終了
+        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD) {
+            // taiga debug
+            std::cout << "hotpages num = " << i << std::endl;
+            // taiga debug
+            break;
+        }
         // 低速メモリにあったら
         if(remapping_data_block_table.at(tmp_pages_and_count.at(i).first).first >= fast_memory_capacity_at_data_block_granularity) {
             std::cout << tmp_pages_and_count.at(i).first << " : " << tmp_pages_and_count.at(i).second << " (in slow memory)" << std::endl;
@@ -155,6 +165,13 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort()
         uint64_t tmp_hotpage_data_block_address = tmp_pages_and_count.at(i).first;
         hotness_table.at(tmp_hotpage_data_block_address) = true;
         hotness_data_block_address_queue.push(tmp_hotpage_data_block_address); //hotな順にキューに入れていく。
+        // taiga debug
+        // マイグレーションができるhot_page数を制限
+        if(remapping_data_block_table.at(tmp_pages_and_count.at(i).first).first >= fast_memory_capacity_at_data_block_granularity) {
+            num_hotpage_in_sm++;
+            if(num_hotpage_in_sm > MAX_PAGES_MIG) break;
+        }
+        // taiga debug
     }
 
     return true;
@@ -236,7 +253,7 @@ bool OS_TRANSPARENT_MANAGEMENT::choose_hotpage_with_sort_with_gc_unmarked(std::v
         }
 
         // カウンターがMIN_ACCESS_COUNT_GCM以下なら終了
-        if(tmp_pages_and_count.at(i).second < MIN_ACCESS_COUNT_GCM) {
+        if(tmp_pages_and_count.at(i).second < HOTNESS_THRESHOLD_WITH_GC) {
             // taiga debug
             std::cout << "hotpages num = " << i << std::endl;
             // taiga debug

@@ -27,9 +27,11 @@
 #define GC_MIGRATION_WITH_GC       (ENABLE)
 #if (GC_MIGRATION_WITH_GC == ENABLE)
 #define GC_TRACE (ENABLE) //GC_TRACEを強制的にENABLEに
-#define MIN_ACCESS_COUNT_GCM (128) // GCマイグレーション時にこの値を超えていないとマイグレーションしない
+// #define MIN_ACCESS_COUNT_GCM (128) // GCマイグレーション時にこの値を超えていないとマイグレーションしない
 #define MAX_PAGES_GCM (150) // GCマイグレーションする最大ページ数
 #endif
+#define MAX_PAGES_MIG (9999) // マイグレーションする最大ページ数
+
 #define DISTANCE_MIGRATION (3000000) // マイグレーションの最低間隔(命令数）
 
 /** taiga debug */
@@ -101,14 +103,14 @@
 #define PRINT_SWAPS_PER_EPOCH_MEMPOD (DISABLE)
 
 #elif (HISTORY_BASED_PAGE_SELECTION == ENABLE)
-#define EPOCH_LENGTH                          (10000000) //EPOCH_LENGTH命令ごとにスワップを行う
+#define EPOCH_LENGTH                          (20000000) //EPOCH_LENGTH命令ごとにスワップを行う
 #define CLEAR_COUNTER_TABLE_EPOCH_NUM         (1) // CLEAR_COUNTER_TABLE_EPOCH_NUM エポック毎にカウンターテーブルの初期化を行う
 // overheads
 #define OVERHEAD_OF_MIGRATION_PER_PAGE        (5000) //cycles
 // #define OVERHEAD_OF_CHANGE_PTE_PER_PAGE        (1000) //cycles
 #define OVERHEAD_OF_TLB_SHOOTDOWN_PER_PAGE        (14000) //cycles
 #if (GC_MIGRATION_WITH_GC == ENABLE)
-#define HOTNESS_THRESHOLD_WITH_GC (128u) // gcと同時にマイグレーションするときのhotness閾値
+#define HOTNESS_THRESHOLD_WITH_GC (70u) // gcと同時にマイグレーションするときのhotness閾値
 #define COLDNESS_THRESHOLD_WITH_GC (1u)
 #endif // GC_MIGRATION_WITH_GC
 #if (NO_MIGRATION==ENABLE) //マイグレーションを起こさない
@@ -226,8 +228,8 @@ public:
     uint64_t write_request_in_memory, write_request_in_memory2;
 
     // taiga debug
-    uint64_t migration_read_request_in_memory, migration_read_request_in_memory2, gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2;
-    uint64_t migration_write_request_in_memory, migration_write_request_in_memory2, gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2;
+    uint64_t migration_read_request_in_memory, migration_read_request_in_memory2, gcmigration_read_request_in_memory, gcmigration_read_request_in_memory2, nomigration_read_request_in_memory, nomigration_read_request_in_memory2;
+    uint64_t migration_write_request_in_memory, migration_write_request_in_memory2, gcmigration_write_request_in_memory, gcmigration_write_request_in_memory2,nomigration_write_request_in_memory, nomigration_write_request_in_memory2;
     // taiga debug
 
 #if (TRACKING_LOAD_STORE_STATISTICS == ENABLE)
