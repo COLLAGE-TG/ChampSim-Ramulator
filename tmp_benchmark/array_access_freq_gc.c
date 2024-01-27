@@ -16,7 +16,7 @@ void array_access() {
     int num_ele_in_page = 512;
     int num_ele_in_cache = 8;
 
-    ll max_num_make_obj = 150; // 一つのワーキングセットで何回オブジェクトを生成するか（変数）(50~100)
+    ll max_num_make_obj = 200; // 一つのワーキングセットで何回オブジェクトを生成するか（変数）(50~200)
     ll min_array_pages = 100;
     ll max_access_one_ws = 100000; // 一つのワーキングセットに何回アクセスするか
     ll max_num_change_ws = 10; // 何個のワーキングセットを使うか
