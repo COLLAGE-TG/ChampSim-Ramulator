@@ -16,19 +16,20 @@ void array_access() {
     int num_ele_in_page = 512;
     int num_ele_in_cache = 8;
 
-    ll max_num_make_obj = 200; // 一つのワーキングセットで何回オブジェクトを生成するか（変数）(50~200)
+    ll max_num_make_obj = 100; // 一つのワーキングセットで何回オブジェクトを生成するか（変数）(50~200)
     ll min_array_pages = 100;
     ll max_access_one_ws = 100000; // 一つのワーキングセットに何回アクセスするか
     ll max_num_change_ws = 10; // 何個のワーキングセットを使うか
     ll min_obj_pages = 200; // オブジェクトの最小ページ数
-    ll plus_page_to_array = 10; // ワーキングセットは何ページずつ増えるのか
+    ll plus_page_to_array = 20; // ワーキングセットは何ページずつ増えるのか
+    ll plus_page_to_obj = 20;
     ll max_pages_in_obj = 800; // objサイズの限界
 
-    ll plus_page_to_obj = (2 * (max_access_one_ws - (max_num_make_obj * min_obj_pages))) / (max_num_make_obj * (max_num_make_obj + 1));
+    // ll plus_page_to_obj = (2 * (max_access_one_ws - (max_num_make_obj * min_obj_pages))) / (max_num_make_obj * (max_num_make_obj + 1));
     ll min_array_num_ele = num_ele_in_page * min_array_pages;
     ll min_obj_num_ele = num_ele_in_page * min_obj_pages;
-    ll num_cachelines_in_obj = max_access_one_ws / max_num_make_obj; // 一つのオブジェクトに何回アクセスするのか
-    ll min_num_ele_in_obj = num_cachelines_in_obj * num_ele_in_cache;
+    ll num_access_one_obj = max_access_one_ws / max_num_make_obj; // 一つのオブジェクトに何回アクセスするのか
+    ll min_num_ele_in_obj = num_access_one_obj * num_ele_in_cache;
 
     // check
     if(plus_page_to_obj <= 0) {
@@ -49,7 +50,7 @@ void array_access() {
         ll *array = (ll *)GC_MALLOC_ATOMIC(sizeof(ll) * array_size);
         for(ll n = 0; n < max_num_make_obj; n++) {  // オブジェクトの切り替え
             ll *obj = (ll*)GC_MALLOC_ATOMIC(sizeof(ll) * obj_size);
-            for(ll i_obj = 0; i_obj < obj_size; i_obj += 8) {
+            for(ll i_obj = 0; i_obj < min_num_ele_in_obj; i_obj += 8) {
                 array[i_array] = obj[i_obj];
                 // i_arrayの更新
                 i_array += 8;
@@ -70,7 +71,7 @@ void array_access() {
     printf("max_access_one_ws : %lu\n", max_access_one_ws);
     printf("max_num_make_obj : %lu\n", max_num_make_obj);
     printf("max_num_change_ws : %lu\n", max_num_change_ws);
-    printf("num_cachelines_in_obj : %lu\n", num_cachelines_in_obj);
+    printf("num_cachelines_in_obj : %lu\n", num_access_one_obj);
     printf("plus_page_to_obj : %lu\n", plus_page_to_obj);
     printf("array_size : %lu\n", array_size);
 
