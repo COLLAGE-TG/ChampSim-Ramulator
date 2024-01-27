@@ -13,52 +13,51 @@ typedef long long ll;
 
 
 void array_access() {
-    printf("===hello array===\n");
     int num_ele_in_page = 512;
     int num_ele_in_cache = 8;
     ll min_array_pages = 100;
     ll min_array_num_ele = num_ele_in_page * min_array_pages;
-    ll min_obj_pages = 400;
-    ll min_obj_size = num_ele_in_page * min_obj_pages;
+    ll max_array_num_ele = 2 * min_array_num_ele;
+    ll max_cachelines_in_array = max_array_num_ele / num_ele_in_cache;
+    // ll min_obj_pages = 400;
+    // ll min_obj_size = num_ele_in_page * min_obj_pages;
     // ll ave_obj_size = (min_obj_size/2) + min_obj_size;
-    int max_access_one_ws = 10000000; // 一つのワーキングセットに何回アクセスするか
-    int max_num_make_obj = 500000; // 繰り返し
-    int max_num_change_ws = 10; // 繰り返し
-    int max_access_one_obj = max_access_one_ws / max_num_make_obj; // 一つのオブジェクトに何回アクセスするのか
-    // printf("===middle array===\n");
+    ll max_access_one_ws = 10000000; // 一つのワーキングセットに何回アクセスするか
+    ll max_num_make_obj = 5000; // 繰り返し
+    ll max_num_change_ws = 10; // 繰り返し
+    ll num_cachelines_in_obj = max_access_one_ws / max_num_make_obj; // 一つのオブジェクトに何回アクセスするのか
+    ll num_ele_in_obj = num_cachelines_in_obj * num_ele_in_cache;
+    // ll num_cachelines_in_obj = num_ele_in_obj / num_ele_in_cache;
+
     // check
-    // if(max_access_one_obj > min_array_num_ele / num_ele_in_cache) {
-    //     printf("max_access_one_obj >= min_array_num_ele\n");
-    //     exit(1);
-    // }
-    // if(max_access_one_obj >= min_obj_size) {
-    //     printf("max_access_one_obj >= min_obj_size\n");
-    //     exit(1);
-    // }
-    if(max_access_one_obj >= min_obj_size / num_ele_in_cache) {
-        printf("max_access_one_obj >= min_obj_size / num_ele_in_cach\n");
+    if(max_cachelines_in_array * 2 < num_cachelines_in_obj) {
+        printf("max_cachelines_in_array < num_cachelines_in_obj\n");
         exit(1);
     }
 
-    printf("--------------\n");
-
     for(int m = 0; m < max_num_change_ws; m++) {
         ll array_size = (rand() % (min_array_num_ele)) + (min_array_num_ele); // 100ページから200ページのarray
-        ll ind_array = 0; // arrayのインデックス
+        ll i_array = 0; // arrayのインデックス
         ll *array = (ll *)GC_MALLOC_ATOMIC(sizeof(ll) * array_size);
         for(ll n = 0; n < max_num_make_obj; n++) {
-            ll obj_size = (rand() % min_obj_size) + min_obj_size;
-            ll *obj = (ll*)GC_MALLOC_ATOMIC(sizeof(ll) * obj_size);
-            for(ll ind_obj = 0; ind_obj < max_access_one_obj; ind_obj += 8) {
-                array[ind_array] = obj[ind_obj];
-                // ind_arrayの更新
-                ind_array += 8;
-                if(ind_array >= array_size) ind_array = 0;
-                if(ind_obj >= obj_size) ind_obj = 0;
+            ll *obj = (ll*)GC_MALLOC_ATOMIC(sizeof(ll) * num_ele_in_obj);
+            for(ll i_obj = 0; i_obj < num_ele_in_obj; i_obj += 8) {
+                array[i_array] = obj[i_obj];
+                // i_arrayの更新
+                i_array += 8;
+                if(i_array >= array_size) i_array = 0;
             }
         }
 
     }
+
+    printf("==stats==\n");
+    printf("max_cachelines_in_array : %lu\n", max_cachelines_in_array);
+    printf("max_access_one_ws : %lu\n", max_access_one_ws);
+    printf("max_num_make_obj : %lu\n", max_num_make_obj);
+    printf("max_num_change_ws : %lu\n", max_num_change_ws);
+    printf("num_cachelines_in_obj : %lu\n", num_cachelines_in_obj);
+    // printf("num_ele_in_obj : %lu\n", num_ele_in_obj);
 }
 
 int main(void)
