@@ -476,13 +476,13 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
     if(rob_entry.is_gc_rtn_start == 1) {
         // degug
         if(num_retired - os_transparent_management->pre_migration_instr <= DISTANCE_MIGRATION) {
-            std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
-            std::cout << "マイグレーション間隔が短いのでマイグレーションを行いません。" << std::endl;
+            // std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
+            // std::cout << "マイグレーション間隔が短いのでマイグレーションを行いません。" << std::endl;
             migration_d_is_short = true;
             return;
         }
         else {
-            std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
+            // std::cout << "is_gc_rtn_start == 1(ooo_cpu.cc)" << std::endl;
         }
         // degug
         
@@ -519,7 +519,6 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
         std::cout << "migration_with_gc_count " << migration_with_gc_count << std::endl;
         std::cout << "migration_with_gc_cycle " << migration_with_gc_cycle << std::endl; 
         std::cout << "migration_with_gc_tlb_cycle " << migration_with_gc_tlb_cycle << std::endl; 
-
         // debug
         os_transparent_management->gcmigration_tlb_overhead += migration_with_gc_tlb_cycle;
         // GC_start時のcurrent_cycleを記録
@@ -549,8 +548,8 @@ void O3_CPU::do_execution(ooo_model_instr& rob_entry)
             }
 
             // taiga debug
-            std::cout << "gc_cycles " << gc_cycle << std::endl;
-            std::cout << "gc_instructions " << gc_ins << std::endl;
+            // std::cout << "gc_cycles " << gc_cycle << std::endl;
+            // std::cout << "gc_instructions " << gc_ins << std::endl;
             // taiga debug
 
             // サイクル数の調整

@@ -16,18 +16,18 @@ void array_access() {
     int num_ele_in_page = 512;
     int num_ele_in_cache = 8;
 
-    ll max_num_make_obj = 100; // 一つのワーキングセットで何回オブジェクトを生成するか（変数）(50~200)
+    ll max_num_make_obj = 200; // 一つのワーキングセットで何回オブジェクトを生成するか（変数）(50~300)
     ll min_array_pages = 100;
-    ll max_access_one_ws = 100000; // 一つのワーキングセットに何回アクセスするか
-    ll max_num_change_ws = 10; // 何個のワーキングセットを使うか
-    ll min_obj_pages = 200; // オブジェクトの最小ページ数
+    ll max_access_one_ws = 2000000; // 一つのワーキングセットに何回アクセスするか
+    ll max_num_change_ws = 1; // 何個のワーキングセットを使うか
+    // ll min_obj_pages = 200; // オブジェクトの最小ページ数
     ll plus_page_to_array = 20; // ワーキングセットは何ページずつ増えるのか
     ll plus_page_to_obj = 20;
     ll max_pages_in_obj = 800; // objサイズの限界
 
     // ll plus_page_to_obj = (2 * (max_access_one_ws - (max_num_make_obj * min_obj_pages))) / (max_num_make_obj * (max_num_make_obj + 1));
     ll min_array_num_ele = num_ele_in_page * min_array_pages;
-    ll min_obj_num_ele = num_ele_in_page * min_obj_pages;
+    // ll min_obj_num_ele = num_ele_in_page * min_obj_pages;
     ll num_access_one_obj = max_access_one_ws / max_num_make_obj; // 一つのオブジェクトに何回アクセスするのか
     ll min_num_ele_in_obj = num_access_one_obj * num_ele_in_cache;
 
@@ -36,10 +36,13 @@ void array_access() {
         printf("plus_page_to_obj <= 0\n");
         exit(1);
     }
-    // if(max_cachelines_in_array * 2 < num_cachelines_in_obj) {
-    //     printf("max_cachelines_in_array < num_cachelines_in_obj\n");
-    //     exit(1);
+    // if(min_array_num_ele < min_num_ele_in_obj) {
+    //     min_array_num_ele = min_num_ele_in_obj;
     // }
+    if(min_array_num_ele > min_num_ele_in_obj) {
+        printf("min_array_num_eley > min_num_ele_in_obj\n");
+        exit(1);
+    }
 
     ll array_size = min_array_num_ele;
     ll obj_size = min_num_ele_in_obj;
@@ -59,7 +62,7 @@ void array_access() {
             // objサイズが大きくなりすぎたら初期化
             if(obj_size / num_ele_in_page >= max_pages_in_obj) {
                 ll tmp_rest_pages = ( obj_size / num_ele_in_page ) - max_pages_in_obj;
-                obj_size = min_num_ele_in_obj + (tmp_rest_pages * num_ele_in_page);
+                obj_size = array_size + (tmp_rest_pages * num_ele_in_page); // array_sizeは下回らないようにする
             }
             obj_size += (plus_page_to_obj * num_ele_in_page);
         }
@@ -74,6 +77,7 @@ void array_access() {
     printf("num_cachelines_in_obj : %lu\n", num_access_one_obj);
     printf("plus_page_to_obj : %lu\n", plus_page_to_obj);
     printf("array_size : %lu\n", array_size);
+    printf("min_num_ele_in_obj : %lu\n", min_num_ele_in_obj);
 
     // printf("num_ele_in_obj : %lu\n", num_ele_in_obj);
 }

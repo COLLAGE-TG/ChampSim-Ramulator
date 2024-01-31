@@ -119,7 +119,7 @@
             "miDebuggerPath": "/usr/bin/gdb" // The path of debugger. e.g., /usr/local/bin/gdb, /usr/bin/gdb
         },
         {
-            "name": "(gdb) Launch for champsim_plus_ramulator with single cores tmp. Trace is new_seq",
+            "name": "(gdb) Launch for champsim_plus_ramulator with single cores tmp. Trace is test",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/champsim_plus_ramulator", // the executable file's name for debugging
@@ -128,10 +128,10 @@
                 "--warmup-instructions",
                 "0", // 1000000
                 "--simulation-instructions",
-                "40000000",
+                "500000000",
                 "configs/HBM-config.cfg",
                 "configs/DDR4-config.cfg",
-                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/traces/new_seq_benchmark_0_200000000_unmarked.champsim.xz"
+                "/home/funkytaiga/tmp_champ/ChampSim-Ramulator/traces/array_access_freq_gc_100_s2_0_2000000000_unmarked.champsim.xz"
             ],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
